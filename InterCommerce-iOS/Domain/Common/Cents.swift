@@ -32,12 +32,18 @@ nonisolated struct Cents: RawRepresentable, Hashable, Comparable, Sendable {
 }
 
 // MARK: - Arithmetic
+//
+// Every extension carries `nonisolated` of its own. Marking the *type* nonisolated does not cover
+// members declared in extensions: with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` those inherit
+// the main actor, and the first consumer of `Cents` outside the main actor — `Price` — failed to
+// compile with "call to main actor-isolated operator function '+'". Easy to miss, because the type
+// declaration looks like it settled the question (ADR §29).
 
 // `AdditiveArithmetic` and not `Numeric`, on purpose: adding two amounts is meaningful, and
 // `lines.map(\.net).reduce(.zero, +)` reads well. Multiplying two amounts of money is meaningless,
 // and leaving it available invites the exact mistake `Price` exists to prevent — computing a
 // per-unit discount and multiplying it by the quantity.
-extension Cents: AdditiveArithmetic {
+nonisolated extension Cents: AdditiveArithmetic {
     static let zero = Cents(0)
 
     static func + (lhs: Cents, rhs: Cents) -> Cents {
@@ -49,7 +55,7 @@ extension Cents: AdditiveArithmetic {
     }
 }
 
-extension Cents {
+nonisolated extension Cents {
     /// Scaling by a quantity — the one multiplication that means something.
     static func * (amount: Cents, quantity: Int) -> Cents {
         Cents(amount.rawValue * Int64(quantity))
@@ -58,13 +64,13 @@ extension Cents {
 
 // MARK: - Conveniences
 
-extension Cents: ExpressibleByIntegerLiteral {
+nonisolated extension Cents: ExpressibleByIntegerLiteral {
     init(integerLiteral value: Int64) {
         self.rawValue = value
     }
 }
 
-extension Cents: CustomStringConvertible {
+nonisolated extension Cents: CustomStringConvertible {
     /// Debug only. User-facing formatting lives in `MoneyFormat` (DesignSystem) and is localised.
     var description: String { "\(rawValue)¢" }
 }

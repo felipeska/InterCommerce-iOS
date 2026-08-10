@@ -104,7 +104,7 @@ extension CachedAsyncImage where Placeholder == AnyView, Failure == AnyView {
 }
 
 #Preview("Loaded") {
-    CachedAsyncImage(url: URL(string: "https://example.invalid/a.png")) {
+    CachedAsyncImage(url: URL(string: "https://picsum.photos/200")) {
         Rectangle().fill(.surface)
     } failure: {
         Rectangle().fill(.discount)
