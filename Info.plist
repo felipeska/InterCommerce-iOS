@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  PARTIAL plist: merged with the keys Xcode generates from the project's INFOPLIST_KEY_*
+	  settings (GENERATE_INFOPLIST_FILE stays YES). Only what those settings cannot express
+	  lives here: arrays and custom keys.
+
+	  It sits at the repo root, outside the synchronized source folder: inside it, the group
+	  copies it as a resource and the build fails with "Multiple commands produce Info.plist".
+	-->
+
+	<!-- The font is copied to the ROOT of the bundle, not to Fonts/: the synchronized group
+	     flattens resources. Verified against the built .app. -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>gabarito_variable.ttf</string>
+	</array>
+
+	<!-- Brand launch screen. Declared here and NOT via INFOPLIST_KEY_UILaunchScreen_Generation:
+	     with both, Xcode nests UILaunchScreen inside itself and the colour is dropped.
+	     Logo still pending; it becomes UIImageName once the asset exists. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>Background</string>
+	</dict>
+
+	<!-- API base URL: never hardcoded in the HTTP client (architecture.md §11). -->
+	<key>ICBaseURL</key>
+	<string>https://dummyjson.com</string>
+</dict>
+</plist>

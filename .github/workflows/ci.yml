@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  SCHEME: InterCommerce-iOS
+  DESTINATION: 'platform=iOS Simulator,name=iPhone 17'
+  SOURCES: InterCommerce-iOS
+  # NOTE: the unit test target is currently named "...UITests" despite being a unit-test bundle.
+  # If it is renamed to InterCommerce-iOSTests, update this variable.
+  TESTS: InterCommerce-iOSUITests
+
+jobs:
+  # These guards are the ONLY enforcement of the architecture: with a single target the compiler
+  # cannot prevent a forbidden import (ADR §21). They run before the build and they block it.
+  layer-guards:
+    name: Layer guards (G0-G10)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      # G0 stops the other guards from passing vacuously: if an expected folder is missing, the
+      # greps match nothing and everything looks green without having checked anything.
+      - name: G0 · Expected structure exists
+        run: |
+          for d in Domain Data DesignSystem Features App; do
+            test -d "$SOURCES/$d" || { echo "missing $SOURCES/$d"; exit 1; }
+          done
+          test -d "$TESTS" || { echo "missing test target $TESTS"; exit 1; }
+
+      - name: G1 · Domain imports no frameworks
+        run: |
+          ! grep -rn --include='*.swift' -E "^import (SwiftUI|SwiftData|UIKit|Observation)" "$SOURCES/Domain"
+
+      - name: G2 · Domain knows nothing of the other layers
+        run: |
+          ! grep -rn --include='*.swift' -E "(ProductEntity|CartItemEntity|ModelContext|HTTPClient|URLSession)" "$SOURCES/Domain"
+
+      - name: G3 · Only Data and App touch ModelContext
+        run: |
+          ! grep -rln --include='*.swift' "ModelContext" "$SOURCES/Features" "$SOURCES/DesignSystem"
+
+      - name: G4 · No @Query and no SwiftData outside Data/App
+        run: |
+          ! grep -rn --include='*.swift' -E "@Query|^import SwiftData" \
+              "$SOURCES/Features" "$SOURCES/DesignSystem" "$SOURCES/Domain"
+
+      - name: G5 · DTOs never leave Data
+        run: |
+          ! grep -rn --include='*.swift' "DTO" "$SOURCES/Features" "$SOURCES/Domain"
+
+      - name: G6 · DesignSystem knows nothing of features
+        run: |
+          ! grep -rn --include='*.swift' -E "(CatalogModel|CartModel|ProductDetailModel|Screen\b)" "$SOURCES/DesignSystem"
+
+      - name: G7 · Domain tests import neither UI nor persistence
+        run: |
+          test -d "$TESTS/Domain" || exit 0
+          ! grep -rn --include='*.swift' -E "^import (SwiftUI|SwiftData)" "$TESTS/Domain"
+
+      - name: G8 · Data knows nothing of the UI
+        run: |
+          ! grep -rn --include='*.swift' -E "^import SwiftUI" "$SOURCES/Data"
+
+      - name: G9 · The composition root stays contained
+        run: |
+          count=$(find "$SOURCES/App" -name '*.swift' | wc -l | tr -d ' ')
+          test "$count" -le 3 || { echo "App/ holds $count files (max 3)"; exit 1; }
+          ! grep -rn --include='*.swift' -E "(RepositoryImpl|CatalogStore|CartStore|HTTPClient)\(" \
+              "$SOURCES/Features" "$SOURCES/DesignSystem"
+
+      - name: G10 · Domain is not pinned to the MainActor
+        run: |
+          ! grep -rn --include='*.swift' "@MainActor" "$SOURCES/Domain"
+          test -d "$TESTS/Domain" || exit 0
+          ! grep -rn --include='*.swift' "@MainActor" "$TESTS/Domain"
+
+  build-test:
+    name: Build + tests
+    runs-on: macos-15
+    needs: layer-guards
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project InterCommerce-iOS.xcodeproj \
+            -scheme "$SCHEME" \
+            -destination "$DESTINATION" \
+            | xcbeautify --renderer github-actions
+
+      - name: Test
+        if: ${{ hashFiles('InterCommerce-iOSUITests/**') != '' }}
+        run: |
+          xcodebuild test \
+            -project InterCommerce-iOS.xcodeproj \
+            -scheme "$SCHEME" \
+            -destination "$DESTINATION" \
+            -resultBundlePath .build/result.xcresult \
+            | xcbeautify --renderer github-actions
