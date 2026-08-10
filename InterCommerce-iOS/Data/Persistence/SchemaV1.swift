@@ -159,3 +159,48 @@ nonisolated enum AppMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] { [SchemaV1.self] }
     static var stages: [MigrationStage] { [] }
 }
+
+// MARK: - Row updates
+
+nonisolated extension ProductEntity {
+    /// Whether a fresh copy carries anything the user would notice.
+    ///
+    /// `cachedAt` and `position` are excluded on purpose: the first always differs, and the second
+    /// belongs to whoever paged the row in. Comparing them would make every detail refresh a write,
+    /// which is the difference between a quiet background refresh and a grid that churns.
+    func differs(from other: ProductEntity) -> Bool {
+        title != other.title
+            || productDescription != other.productDescription
+            || category != other.category
+            || brand != other.brand
+            || listCents != other.listCents
+            || discountPercentage != other.discountPercentage
+            || rating != other.rating
+            || stock != other.stock
+            || thumbnail != other.thumbnail
+            || images != other.images
+            || availabilityStatus != other.availabilityStatus
+            || shippingInformation != other.shippingInformation
+            || warrantyInformation != other.warrantyInformation
+            || returnPolicy != other.returnPolicy
+    }
+
+    /// Copies everything except `position`, which the caller owns.
+    func apply(_ other: ProductEntity) {
+        title = other.title
+        productDescription = other.productDescription
+        category = other.category
+        brand = other.brand
+        listCents = other.listCents
+        discountPercentage = other.discountPercentage
+        rating = other.rating
+        stock = other.stock
+        thumbnail = other.thumbnail
+        images = other.images
+        availabilityStatus = other.availabilityStatus
+        shippingInformation = other.shippingInformation
+        warrantyInformation = other.warrantyInformation
+        returnPolicy = other.returnPolicy
+        cachedAt = other.cachedAt
+    }
+}
