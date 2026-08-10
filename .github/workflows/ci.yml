@@ -37,20 +37,20 @@ jobs:
 
       - name: G2 · Domain knows nothing of the other layers
         run: |
-          ! grep -rn --include='*.swift' -E "(ProductEntity|CartItemEntity|ModelContext|HTTPClient|URLSession)" "$SOURCES/Domain"
+          ! grep -rn --include='*.swift' -E "(ProductEntity|CartItemEntity|ModelContext|HTTPClient|URLSession)" "$SOURCES/Domain" | grep -vE ':[0-9]+:[[:space:]]*//'
 
       - name: G3 · Only Data and App touch ModelContext
         run: |
-          ! grep -rln --include='*.swift' "ModelContext" "$SOURCES/Features" "$SOURCES/DesignSystem"
+          ! grep -rn --include='*.swift' "ModelContext" "$SOURCES/Features" "$SOURCES/DesignSystem" | grep -vE ':[0-9]+:[[:space:]]*//'
 
       - name: G4 · No @Query and no SwiftData outside Data/App
         run: |
           ! grep -rn --include='*.swift' -E "@Query|^import SwiftData" \
-              "$SOURCES/Features" "$SOURCES/DesignSystem" "$SOURCES/Domain"
+              "$SOURCES/Features" "$SOURCES/DesignSystem" "$SOURCES/Domain" | grep -vE ':[0-9]+:[[:space:]]*//'
 
       - name: G5 · DTOs never leave Data
         run: |
-          ! grep -rn --include='*.swift' "DTO" "$SOURCES/Features" "$SOURCES/Domain"
+          ! grep -rn --include='*.swift' "DTO" "$SOURCES/Features" "$SOURCES/Domain" | grep -vE ':[0-9]+:[[:space:]]*//'
 
       - name: G6 · DesignSystem knows nothing of features
         run: |
@@ -72,11 +72,13 @@ jobs:
           ! grep -rn --include='*.swift' -E "(RepositoryImpl|CatalogStore|CartStore|HTTPClient)\(" \
               "$SOURCES/Features" "$SOURCES/DesignSystem"
 
+      # Comment lines are filtered out: prose that merely names an API is not a violation, and the
+      # first run of this guard fired on a comment explaining that the suite is NOT @MainActor.
       - name: G10 · Domain is not pinned to the MainActor
         run: |
-          ! grep -rn --include='*.swift' "@MainActor" "$SOURCES/Domain"
+          ! grep -rn --include='*.swift' "@MainActor" "$SOURCES/Domain" | grep -vE ':[0-9]+:[[:space:]]*//'
           test -d "$TESTS/Domain" || exit 0
-          ! grep -rn --include='*.swift' "@MainActor" "$TESTS/Domain"
+          ! grep -rn --include='*.swift' "@MainActor" "$TESTS/Domain" | grep -vE ':[0-9]+:[[:space:]]*//'
 
   build-test:
     name: Build + tests
