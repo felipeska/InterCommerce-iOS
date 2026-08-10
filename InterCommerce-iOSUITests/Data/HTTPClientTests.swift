@@ -20,6 +20,8 @@ import Testing
 struct HTTPClientTests {
 
     private let baseURL = URL(string: "https://dummyjson.com")!
+    /// Each suite stubs its own host so suites can keep running in parallel.
+    private let host = "dummyjson.com"
 
     private struct Payload: Codable, Equatable, Sendable {
         let id: Int
@@ -40,7 +42,7 @@ struct HTTPClientTests {
 
     @Test("Decodes a 200 with a real body")
     func decodesSuccess() async throws {
-        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"Essence Mascara"}"#.data(using: .utf8)!))
+        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"Essence Mascara"}"#.data(using: .utf8)!), host: host)
 
         let payload: Payload = try await makeClient().send(.product(id: 1))
 
@@ -49,11 +51,11 @@ struct HTTPClientTests {
 
     @Test("Builds the URL from the endpoint, percent-encoding the query")
     func buildsURL() async throws {
-        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"x"}"#.data(using: .utf8)!))
+        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"x"}"#.data(using: .utf8)!), host: host)
 
         _ = try await makeClient().send(.searchProducts(query: "café & té", limit: 10, skip: 0)) as Payload
 
-        let url = try #require(URLProtocolStub.requests.first?.url?.absoluteString)
+        let url = try #require(URLProtocolStub.requests(host: host).first?.url?.absoluteString)
         #expect(url.hasPrefix("https://dummyjson.com/products/search?"))
         #expect(url.contains("q=caf%C3%A9%20%26%20t%C3%A9") || url.contains("q=caf%C3%A9+%26+t%C3%A9"))
         #expect(url.contains("limit=10"))
@@ -64,7 +66,7 @@ struct HTTPClientTests {
 
     @Test("404 becomes notFound")
     func notFound() async {
-        URLProtocolStub.set(.response(status: 404, body: #"{"message":"not found"}"#.data(using: .utf8)!))
+        URLProtocolStub.set(.response(status: 404, body: #"{"message":"not found"}"#.data(using: .utf8)!), host: host)
         await #expect(throws: AppError.notFound) {
             _ = try await makeClient().send(.product(id: 99_999)) as Payload
         }
@@ -72,7 +74,7 @@ struct HTTPClientTests {
 
     @Test("5xx becomes server, carrying the status", arguments: [500, 503])
     func serverError(status: Int) async {
-        URLProtocolStub.set(.response(status: status, body: Data()))
+        URLProtocolStub.set(.response(status: status, body: Data()), host: host)
         await #expect(throws: AppError.server(status: status)) {
             _ = try await makeClient().send(.product(id: 1)) as Payload
         }
@@ -80,7 +82,7 @@ struct HTTPClientTests {
 
     @Test("No connectivity becomes noConnection", arguments: [URLError.Code.notConnectedToInternet, .networkConnectionLost, .cannotFindHost])
     func noConnection(code: URLError.Code) async {
-        URLProtocolStub.set(.failure(code))
+        URLProtocolStub.set(.failure(code), host: host)
         await #expect(throws: AppError.noConnection) {
             _ = try await makeClient().send(.product(id: 1)) as Payload
         }
@@ -88,7 +90,7 @@ struct HTTPClientTests {
 
     @Test("A timeout becomes timeout")
     func timeout() async {
-        URLProtocolStub.set(.failure(.timedOut))
+        URLProtocolStub.set(.failure(.timedOut), host: host)
         await #expect(throws: AppError.timeout) {
             _ = try await makeClient().send(.product(id: 1)) as Payload
         }
@@ -96,7 +98,7 @@ struct HTTPClientTests {
 
     @Test("Malformed JSON becomes decoding")
     func malformedJSON() async {
-        URLProtocolStub.set(.response(status: 200, body: #"{"id":"not-a-number"}"#.data(using: .utf8)!))
+        URLProtocolStub.set(.response(status: 200, body: #"{"id":"not-a-number"}"#.data(using: .utf8)!), host: host)
         await #expect(throws: AppError.decoding) {
             _ = try await makeClient().send(.product(id: 1)) as Payload
         }
@@ -104,7 +106,7 @@ struct HTTPClientTests {
 
     @Test("An empty 200 becomes emptyResult")
     func emptyBody() async {
-        URLProtocolStub.set(.response(status: 200, body: Data()))
+        URLProtocolStub.set(.response(status: 200, body: Data()), host: host)
         await #expect(throws: AppError.emptyResult) {
             _ = try await makeClient().send(.product(id: 1)) as Payload
         }
@@ -117,7 +119,7 @@ struct HTTPClientTests {
     /// "no connection".
     @Test("Cancellation is never turned into an AppError")
     func cancellationIsNotAnAppError() async throws {
-        URLProtocolStub.set(.hang)
+        URLProtocolStub.set(.hang, host: host)
         let client = makeClient()
 
         let task = Task { () -> Result<Payload, any Error> in
@@ -143,12 +145,12 @@ struct HTTPClientTests {
 
     @Test("Headers middleware adds Accept and User-Agent")
     func headersMiddleware() async throws {
-        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"x"}"#.data(using: .utf8)!))
+        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"x"}"#.data(using: .utf8)!), host: host)
 
         _ = try await makeClient(middlewares: [HeadersMiddleware(userAgent: "Probe")])
             .send(.product(id: 1)) as Payload
 
-        let request = try #require(URLProtocolStub.requests.first)
+        let request = try #require(URLProtocolStub.requests(host: host).first)
         #expect(request.value(forHTTPHeaderField: "Accept") == "application/json")
         #expect(request.value(forHTTPHeaderField: "User-Agent") == "Probe")
     }
@@ -157,7 +159,7 @@ struct HTTPClientTests {
     /// adding it required no change to the client.
     @Test("The chain wraps in order: the first middleware is the outermost")
     func middlewareOrder() async throws {
-        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"x"}"#.data(using: .utf8)!))
+        URLProtocolStub.set(.response(status: 200, body: #"{"id":1,"title":"x"}"#.data(using: .utf8)!), host: host)
         let recorder = OrderRecorder()
 
         _ = try await makeClient(middlewares: [
