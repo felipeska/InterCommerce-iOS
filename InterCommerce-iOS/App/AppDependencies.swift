@@ -32,7 +32,7 @@ struct AppDependencies: Sendable {
 
         return AppDependencies(
             observeCatalog: ObserveCatalog(repository: repository),
-            refreshCatalog: RefreshCatalog(repository: repository),
+            refreshCatalog: RefreshCatalog(repository: repository, ttl: configuration.catalogTTL),
             loadNextPage: LoadNextPage(repository: repository),
             loadImage: { url in try await imageLoader.image(for: url) }
         )
@@ -53,12 +53,35 @@ struct AppDependencies: Sendable {
 /// Values that come from `Info.plist` rather than being hardcoded in the client.
 struct AppConfiguration: Sendable {
     let baseURL: URL
+    /// How long cached products stay fresh.
+    let catalogTTL: Duration
 
-    static func fromInfoPlist(bundle: Bundle = .main) -> AppConfiguration {
-        let raw = bundle.object(forInfoDictionaryKey: "ICBaseURL") as? String
-        // The fallback is the same value the plist holds: a missing key must not take the app down,
-        // and there is nothing secret about a public base URL.
-        return AppConfiguration(baseURL: URL(string: raw ?? "") ?? URL(string: "https://dummyjson.com")!)
+    static func fromInfoPlist(
+        bundle: Bundle = .main,
+        arguments: [String] = ProcessInfo.processInfo.arguments
+    ) -> AppConfiguration {
+        // A launch argument wins over the plist. This is the hook UI tests use to point the app at a
+        // stub server, and the only practical way to exercise "the network is unreachable" on a
+        // simulator that shares the Mac's connection:
+        //   xcrun simctl launch <device> fcb.intercommerce -ICBaseURL http://127.0.0.1:9
+        let plistURL = (bundle.object(forInfoDictionaryKey: "ICBaseURL") as? String).flatMap(URL.init(string:))
+        let overrideURL = arguments.firstIndex(of: "-ICBaseURL")
+            .flatMap { arguments[safe: $0 + 1] }
+            .flatMap(URL.init(string:))
+
+        // A TTL of zero forces a refresh on every launch, which is how a test reaches the "tried and
+        // failed" state deterministically instead of waiting half an hour for the cache to age.
+        let overrideTTL = arguments.firstIndex(of: "-ICCatalogTTLSeconds")
+            .flatMap { arguments[safe: $0 + 1] }
+            .flatMap(Int.init)
+            .map(Duration.seconds)
+
+        return AppConfiguration(
+            // The fallback is the same value the plist holds: a missing key must not take the app
+            // down, and there is nothing secret about a public base URL.
+            baseURL: overrideURL ?? plistURL ?? URL(string: "https://dummyjson.com")!,
+            catalogTTL: overrideTTL ?? RefreshCatalog.defaultTTL
+        )
     }
 }
 
@@ -96,4 +119,10 @@ private struct PreviewProductRepository: ProductRepository {
     func refreshCatalogIfStale(ttl: Duration) async -> PageOutcome { .noop }
     func refreshCatalog() async -> PageOutcome { .noop }
     func loadNextPage() async -> PageOutcome { .noop }
+}
+
+nonisolated private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
 }
