@@ -18,7 +18,18 @@ struct CartBadge: View {
 
     var body: some View {
         Image(systemName: "cart")
-            .badge(count)
+            .overlay(alignment: .topTrailing) {
+                if count > 0 {
+                    Text(count, format: .number)
+                        .font(.caption2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(.red, in: .capsule)
+                        .alignmentGuide(.top) { $0[.bottom] / 2 }
+                        .alignmentGuide(.trailing) { $0[.leading] + $0.width / 2 }
+                }
+            }
             .accessibilityLabel(count == 0 ? Text("Cart, empty") : Text("Cart, \(count) items"))
             .task {
                 for await lines in observeCart() {
