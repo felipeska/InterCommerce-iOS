@@ -12,7 +12,7 @@ struct ProductCard: View {
     let product: Product
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
+        VStack(alignment: .leading, spacing: 0) {
             CachedAsyncImage.product(url: product.thumbnailURL)
                 .aspectRatio(1, contentMode: .fill)
                 .frame(maxWidth: .infinity)
@@ -40,7 +40,12 @@ struct ProductCard: View {
                         .foregroundStyle(.discount)
                 }
             }
+            .padding(Spacing.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        // The image is square and the surface continues behind the text, so the whole cell reads as
+        // one tile. Same shape and radius as the image, so the two corners line up exactly.
+        .background(.surface, in: .rect(cornerRadius: CornerRadius.card))
         // One element, one sentence: VoiceOver reads the product, not four disconnected fragments.
         .accessibilityElement(children: .combine)
     }

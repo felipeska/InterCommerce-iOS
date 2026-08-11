@@ -12,13 +12,23 @@ struct CatalogSkeletonGrid: View {
     var body: some View {
         LazyVGrid(columns: CatalogGrid.columns, spacing: Spacing.m) {
             ForEach(0..<6, id: \.self) { _ in
-                VStack(alignment: .leading, spacing: Spacing.s) {
-                    RoundedRectangle(cornerRadius: CornerRadius.card)
-                        .fill(.surface)
-                        .aspectRatio(1, contentMode: .fit)
-                    RoundedRectangle(cornerRadius: CornerRadius.small).fill(.surface).frame(height: 14)
-                    RoundedRectangle(cornerRadius: CornerRadius.small).fill(.surface).frame(width: 80, height: 14)
+                VStack(alignment: .leading, spacing: 0) {
+                    Color.clear.aspectRatio(1, contentMode: .fit)
+
+                    // The bars sit on the tile, so they are drawn in the elevated tone rather than
+                    // in the surface the card itself is painted with.
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        RoundedRectangle(cornerRadius: CornerRadius.small)
+                            .fill(.surfaceElevated)
+                            .frame(height: 14)
+                        RoundedRectangle(cornerRadius: CornerRadius.small)
+                            .fill(.surfaceElevated)
+                            .frame(width: 80, height: 14)
+                    }
+                    .padding(Spacing.m)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .background(.surface, in: .rect(cornerRadius: CornerRadius.card))
             }
         }
         .shimmering()
