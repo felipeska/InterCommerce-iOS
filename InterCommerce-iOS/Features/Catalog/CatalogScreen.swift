@@ -48,10 +48,13 @@ struct CatalogScreen: View {
                 }
             }
         }
+        // Deliberately without `.searchToolbarBehavior(.minimize)`. Collapsing search into a toolbar
+        // button gives the grid its height back, but the minimized button and the cart item then
+        // share the navigation bar, and popping the detail screen logs an unsatisfiable-constraint
+        // warning: UIKit sizes the bar-button wrapper to zero mid-transition while its own 8pt
+        // insets still hold. Both constraints are UIKit's, so the only lever we have is not putting
+        // the two of them in the bar together. The full search field costs height and nothing else.
         .searchable(text: $viewModel.query, prompt: "Search products")
-        // With a full grid the system collapses search into a toolbar button and gives the height
-        // back to the content.
-        .searchToolbarBehavior(.minimize)
         // `.task(id:)` is the debounce *and* the cancellation of the stale query: changing the id
         // tears the previous run down before the next one starts.
         .task(id: viewModel.query) { await viewModel.runSearch(viewModel.query) }
