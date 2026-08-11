@@ -2,19 +2,30 @@
 //  RootView.swift
 //  Features · Navigation
 //
-//  Placeholder. The catalogue arrives in Phase 2 and the navigation stack in Phase 4; this exists
-//  so the app has a root that is not the Xcode template.
+//  The navigation stack. Destinations are a `Hashable` enum carrying primitives only: the detail
+//  screen re-reads its product from the store rather than receiving it (architecture.md §7).
 //
 
 import SwiftUI
 
 struct RootView: View {
+    @Environment(\.dependencies) private var dependencies
+    @State private var path = NavigationPath()
+
     var body: some View {
-        ContentUnavailableView(
-            "InterCommerce",
-            systemImage: "shippingbox",
-            description: Text("The catalogue arrives in Phase 2.")
-        )
+        NavigationStack(path: $path) {
+            CatalogScreen(dependencies: dependencies)
+                .navigationDestination(for: Destination.self) { destination in
+                    switch destination {
+                    case .productDetail(let id):
+                        // Phase 4.
+                        Text("Product \(id)")
+                    case .cart:
+                        // Phase 5.
+                        Text("Cart")
+                    }
+                }
+        }
     }
 }
 
