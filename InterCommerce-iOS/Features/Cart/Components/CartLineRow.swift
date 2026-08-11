@@ -25,6 +25,18 @@ struct CartLineRow: View {
                     .font(.gabarito(.footnote))
                     .foregroundStyle(.textSecondary)
 
+                Text("Quantity: \(line.quantity)")
+                    .font(.gabarito(.footnote))
+                    .foregroundStyle(.textPrimary)
+            }
+
+            Spacer(minLength: Spacing.s)
+
+            VStack(alignment: .trailing, spacing: Spacing.s) {
+                Text(MoneyFormat.string(line.net))
+                    .font(.gabarito(.subheadline, weight: .semibold))
+                    .foregroundStyle(.textPrimary)
+
                 // The system stepper: 44 pt targets, VoiceOver and Dynamic Type for free.
                 //
                 // Increment/decrement rather than a `Binding`: routing the callback through
@@ -33,22 +45,17 @@ struct CartLineRow: View {
                 // clearer one — decrementing at 1 hands 0 to the caller, which is what removes the
                 // line.
                 Stepper {
+                    // The count is spelled out beside the title instead; hiding the label here is
+                    // what lets the stepper shrink to just its two buttons.
                     Text("Quantity: \(line.quantity)")
-                        .font(.gabarito(.footnote))
-                        .foregroundStyle(.textPrimary)
                 } onIncrement: {
                     guard line.quantity < CartLine.quantityRange.upperBound else { return }
                     onQuantityChange(line.quantity + 1)
                 } onDecrement: {
                     onQuantityChange(line.quantity - 1)
                 }
+                .labelsHidden()
             }
-
-            Spacer(minLength: Spacing.s)
-
-            Text(MoneyFormat.string(line.net))
-                .font(.gabarito(.subheadline, weight: .semibold))
-                .foregroundStyle(.textPrimary)
         }
         .padding(.vertical, Spacing.s)
     }
