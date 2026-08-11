@@ -16,15 +16,18 @@ struct CatalogScreen: View {
         _model = State(initialValue: CatalogModel(
             observeCatalog: dependencies.observeCatalog,
             refreshCatalog: dependencies.refreshCatalog,
-            loadNextPage: dependencies.loadNextPage
+            loadNextPage: dependencies.loadNextPage,
+            searchProducts: dependencies.searchProducts
         ))
     }
 
     var body: some View {
         CatalogContentView(
-            products: model.products,
+            products: model.visibleProducts,
+            isSearching: model.isSearching,
+            searchPhase: model.search,
             showsSkeletons: model.showsSkeletons,
-            isOffline: model.isOffline,
+            isOffline: model.showsOfflineBanner,
             failure: model.failure,
             showsEmptyState: model.showsEmptyState,
             appendPhase: model.append,
@@ -32,6 +35,13 @@ struct CatalogScreen: View {
             onReachEnd: { Task { await model.loadMore() } }
         )
         .navigationTitle("InterCommerce")
+        .searchable(text: $model.query, prompt: "Search products")
+        // With a full grid the system collapses search into a toolbar button and gives the height
+        // back to the content (design.md §1 bis).
+        .searchToolbarBehavior(.minimize)
+        // `.task(id:)` is the debounce *and* the cancellation of the stale query: changing the id
+        // tears the previous run down before the next one starts.
+        .task(id: model.query) { await model.runSearch(model.query) }
         .refreshable { await model.refreshNow() }
         // `.task` and not `onAppear`: leaving the screen cancels the stream and any in-flight page.
         .task { await model.start() }

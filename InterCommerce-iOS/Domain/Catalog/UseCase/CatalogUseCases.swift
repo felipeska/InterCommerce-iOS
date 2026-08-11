@@ -58,3 +58,25 @@ nonisolated struct LoadNextPage: Sendable {
         await repository.loadNextPage()
     }
 }
+
+/// Searching. A delegator — the remote-then-local decision lives in `Data` (ADR §14) — but it is the
+/// only door to it, which is what keeps the boundary checkable.
+nonisolated struct SearchProducts: Sendable {
+    /// Below this, a query is noise: two characters is where results start being about what the
+    /// person meant rather than what they had typed so far.
+    static let minimumQueryLength = 2
+
+    private let repository: any ProductRepository
+
+    init(repository: any ProductRepository) {
+        self.repository = repository
+    }
+
+    func callAsFunction(query: String) async -> SearchOutcome {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= Self.minimumQueryLength else {
+            return .results(SearchResults(products: [], source: .remote))
+        }
+        return await repository.search(query: trimmed)
+    }
+}

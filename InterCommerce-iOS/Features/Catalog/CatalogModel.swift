@@ -33,14 +33,41 @@ final class CatalogModel {
     private(set) var refresh: LoadPhase = .idle
     private(set) var append: LoadPhase = .idle
 
+    /// Bound to `.searchable`. The view owns the text; the model owns what it means.
+    var query: String = ""
+    private(set) var search: SearchPhase = .inactive
+
+    /// What the screen is showing instead of the catalogue, if anything.
+    enum SearchPhase: Equatable {
+        /// Fewer than two characters: the catalogue stays on screen.
+        case inactive
+        case searching
+        case results([Product], isLocal: Bool)
+        case empty(isLocal: Bool)
+
+        var isLocal: Bool {
+            switch self {
+            case .results(_, let isLocal), .empty(let isLocal): isLocal
+            case .inactive, .searching: false
+            }
+        }
+    }
+
     private let observeCatalog: ObserveCatalog
     private let refreshCatalog: RefreshCatalog
     private let loadNextPage: LoadNextPage
+    private let searchProducts: SearchProducts
 
-    init(observeCatalog: ObserveCatalog, refreshCatalog: RefreshCatalog, loadNextPage: LoadNextPage) {
+    init(
+        observeCatalog: ObserveCatalog,
+        refreshCatalog: RefreshCatalog,
+        loadNextPage: LoadNextPage,
+        searchProducts: SearchProducts
+    ) {
         self.observeCatalog = observeCatalog
         self.refreshCatalog = refreshCatalog
         self.loadNextPage = loadNextPage
+        self.searchProducts = searchProducts
     }
 
     // MARK: - Derived state
@@ -48,6 +75,18 @@ final class CatalogModel {
     // The combinations that matter, named once here instead of being re-derived in the view. The
     // second one is the whole point of the offline story: content plus a warning, never an error
     // screen replacing products the user can still read.
+
+    /// True while the screen is answering a query rather than showing the catalogue.
+    var isSearching: Bool { search != .inactive }
+
+    /// What the grid renders: search results when there is a query, the catalogue otherwise.
+    var visibleProducts: [Product] {
+        if case let .results(results, _) = search { return results }
+        return products
+    }
+
+    /// The banner covers both stories: a stale catalogue and a search answered from the cache.
+    var showsOfflineBanner: Bool { isOffline || search.isLocal }
 
     var showsSkeletons: Bool { products.isEmpty && refresh == .loading }
     var isOffline: Bool { !products.isEmpty && refresh.error != nil }
@@ -101,6 +140,40 @@ final class CatalogModel {
         let previous = append
         append = .loading
         apply(await loadNextPage(), to: \.append, revertingTo: previous)
+    }
+
+    // MARK: - Search
+
+    /// Runs a query, debounced.
+    ///
+    /// The caller is `.task(id: query)`, so SwiftUI cancels the previous run the moment another
+    /// character is typed: the sleep below turns that into a debounce, and the cancellation into the
+    /// obsolete request being dropped. No `debounce` operator, no manual bookkeeping — the structure
+    /// of the task *is* the mechanism.
+    func runSearch(_ query: String, debounce: Duration = .milliseconds(350)) async {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= SearchProducts.minimumQueryLength else {
+            search = .inactive
+            return
+        }
+
+        do {
+            try await Task.sleep(for: debounce)
+        } catch {
+            return // Another keystroke arrived. This query never mattered.
+        }
+
+        search = .searching
+
+        switch await searchProducts(query: trimmed) {
+        case .cancelled:
+            break // Superseded; the newer query owns the screen.
+        case .results(let results):
+            let isLocal = results.source.isLocal
+            search = results.products.isEmpty
+                ? .empty(isLocal: isLocal)
+                : .results(results.products, isLocal: isLocal)
+        }
     }
 
     // MARK: - Outcome handling

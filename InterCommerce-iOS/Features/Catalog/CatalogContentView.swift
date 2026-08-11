@@ -10,6 +10,8 @@ import SwiftUI
 
 struct CatalogContentView: View {
     let products: [Product]
+    var isSearching: Bool = false
+    var searchPhase: CatalogModel.SearchPhase = .inactive
     let showsSkeletons: Bool
     let isOffline: Bool
     let failure: AppError?
@@ -35,7 +37,8 @@ struct CatalogContentView: View {
                 }
                 .padding(Spacing.l)
 
-                appendFooter
+                // Paging belongs to the catalogue, not to a result set.
+                if !isSearching { appendFooter }
             }
         }
         .background(Color.background)
@@ -48,7 +51,18 @@ struct CatalogContentView: View {
             }
         }
         .overlay {
-            if let failure {
+            if case .searching = searchPhase, products.isEmpty {
+                ProgressView()
+            } else if case .empty(let isLocal) = searchPhase {
+                ContentUnavailableView {
+                    Label("No matches", systemImage: "magnifyingglass")
+                } description: {
+                    // Being honest about what was searched: offline, only what is cached can match.
+                    Text(isLocal
+                         ? "Nothing in your saved products matches that."
+                         : "Try a different search.")
+                }
+            } else if let failure {
                 AppErrorView(message: failure.message, systemImage: failure.symbol, retry: onRetry)
             } else if showsEmptyState {
                 AppEmptyView(

@@ -25,4 +25,11 @@ nonisolated protocol ProductRepository: Sendable {
 
     /// Loads the page after the cursor.
     func loadNextPage() async -> PageOutcome
+
+    /// Searches the catalogue.
+    ///
+    /// One method, not `searchRemote` plus `searchLocal`: deciding when to serve from disk is Data's
+    /// job, and a domain contract that named the transport would push that decision into every
+    /// caller (ADR §14).
+    func search(query: String) async -> SearchOutcome
 }

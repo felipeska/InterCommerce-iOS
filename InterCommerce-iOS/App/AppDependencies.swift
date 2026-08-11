@@ -14,6 +14,7 @@ struct AppDependencies: Sendable {
     let observeCatalog: ObserveCatalog
     let refreshCatalog: RefreshCatalog
     let loadNextPage: LoadNextPage
+    let searchProducts: SearchProducts
     /// Handed to the design system as a plain function, so no view ever names `ImageLoader`.
     let loadImage: @Sendable (URL) async throws -> UIImage
 
@@ -27,13 +28,15 @@ struct AppDependencies: Sendable {
         )
         let store = CatalogStore(modelContainer: container)
         let paginator = CatalogPaginator(api: ProductAPI(client: client), store: store)
-        let repository = ProductRepositoryImpl(store: store, paginator: paginator)
+        let api = ProductAPI(client: client)
+        let repository = ProductRepositoryImpl(store: store, paginator: paginator, api: api)
         let imageLoader = ImageLoader()
 
         return AppDependencies(
             observeCatalog: ObserveCatalog(repository: repository),
             refreshCatalog: RefreshCatalog(repository: repository, ttl: configuration.catalogTTL),
             loadNextPage: LoadNextPage(repository: repository),
+            searchProducts: SearchProducts(repository: repository),
             loadImage: { url in try await imageLoader.image(for: url) }
         )
     }
@@ -97,6 +100,7 @@ extension AppDependencies {
         observeCatalog: ObserveCatalog(repository: PreviewProductRepository()),
         refreshCatalog: RefreshCatalog(repository: PreviewProductRepository()),
         loadNextPage: LoadNextPage(repository: PreviewProductRepository()),
+        searchProducts: SearchProducts(repository: PreviewProductRepository()),
         loadImage: { _ in
             // `UIColor`, not an asset symbol: this closure is nonisolated and the generated colour
             // symbols are MainActor-isolated (ADR §29).
@@ -119,6 +123,9 @@ private struct PreviewProductRepository: ProductRepository {
     func refreshCatalogIfStale(ttl: Duration) async -> PageOutcome { .noop }
     func refreshCatalog() async -> PageOutcome { .noop }
     func loadNextPage() async -> PageOutcome { .noop }
+    func search(query: String) async -> SearchOutcome {
+        .results(SearchResults(products: Product.previewList, source: .remote))
+    }
 }
 
 nonisolated private extension Array {

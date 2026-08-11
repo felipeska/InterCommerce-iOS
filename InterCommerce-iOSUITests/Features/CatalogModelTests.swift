@@ -18,7 +18,8 @@ struct CatalogModelTests {
         CatalogModel(
             observeCatalog: ObserveCatalog(repository: repository),
             refreshCatalog: RefreshCatalog(repository: repository),
-            loadNextPage: LoadNextPage(repository: repository)
+            loadNextPage: LoadNextPage(repository: repository),
+            searchProducts: SearchProducts(repository: repository)
         )
     }
 
@@ -133,6 +134,93 @@ struct CatalogModelTests {
 
         #expect(await repository.nextPageCallCount == 1, "The grid asked for the same page twice")
     }
+
+    // MARK: - Search
+
+    @Test("A query shorter than two characters leaves the catalogue alone", arguments: ["", "a", " x "])
+    func shortQueriesDoNotSearch(query: String) async {
+        let repository = FakeProductRepository(products: Product.previewList)
+        let model = makeModel(repository: repository)
+        await model.start()
+
+        await model.runSearch(query, debounce: .zero)
+
+        #expect(model.search == .inactive)
+        #expect(model.visibleProducts.count == 3, "The catalogue should still be on screen")
+        #expect(await repository.searchCallCount == 0, "It searched for something too short to mean anything")
+    }
+
+    @Test("Remote results replace the grid without touching the catalogue")
+    func remoteResults() async {
+        let repository = FakeProductRepository(
+            products: Product.previewList,
+            searchOutcome: .results(SearchResults(products: [Product.preview], source: .remote))
+        )
+        let model = makeModel(repository: repository)
+        await model.start()
+
+        await model.runSearch("mascara", debounce: .zero)
+
+        #expect(model.visibleProducts.map(\.id) == [1])
+        #expect(model.showsOfflineBanner == false)
+        #expect(model.products.count == 3, "The cached catalogue was overwritten by a search")
+    }
+
+    /// The degradation the brief asks for: a failed request is answered from the cache, and the
+    /// screen says so.
+    @Test("Local results raise the offline banner")
+    func localResultsAreFlagged() async {
+        let repository = FakeProductRepository(
+            products: Product.previewList,
+            searchOutcome: .results(SearchResults(products: [Product.preview], source: .local(reason: .noConnection)))
+        )
+        let model = makeModel(repository: repository)
+        await model.start()
+
+        await model.runSearch("mascara", debounce: .zero)
+
+        #expect(model.visibleProducts.map(\.id) == [1])
+        #expect(model.showsOfflineBanner, "A cached answer was presented as if it were fresh")
+    }
+
+    @Test("No matches offline says so, rather than claiming the product does not exist")
+    func emptyLocalResults() async {
+        let repository = FakeProductRepository(
+            products: Product.previewList,
+            searchOutcome: .results(SearchResults(products: [], source: .local(reason: .noConnection)))
+        )
+        let model = makeModel(repository: repository)
+        await model.start()
+
+        await model.runSearch("nothing", debounce: .zero)
+
+        #expect(model.search == .empty(isLocal: true))
+    }
+
+    /// The debounce: a query the user typed past never reaches the network.
+    @Test("Typing over a query cancels it before it is sent")
+    func debounceDropsSupersededQueries() async throws {
+        let repository = FakeProductRepository(products: Product.previewList)
+        let model = makeModel(repository: repository)
+
+        let typing = Task { await model.runSearch("pho", debounce: .milliseconds(300)) }
+        try await Task.sleep(for: .milliseconds(50))
+        typing.cancel()
+        _ = await typing.value
+
+        #expect(await repository.searchCallCount == 0, "The superseded query still hit the network")
+    }
+
+    @Test("A cancelled search leaves the previous results on screen")
+    func cancelledSearchKeepsResults() async {
+        let repository = FakeProductRepository(products: Product.previewList, searchOutcome: .cancelled)
+        let model = makeModel(repository: repository)
+        await model.start()
+
+        await model.runSearch("phone", debounce: .zero)
+
+        #expect(model.search == .searching, "A superseded search should not blank the screen")
+    }
 }
 
 // MARK: - Fake
@@ -142,18 +230,25 @@ private actor FakeProductRepository: ProductRepository {
     private let refreshOutcome: PageOutcome
     private let nextPageOutcome: PageOutcome
     private let nextPageDelay: Duration?
+    private let searchOutcome: SearchOutcome
+    private let searchDelay: Duration?
     private(set) var nextPageCallCount = 0
+    private(set) var searchCallCount = 0
 
     init(
         products: [Product],
         refreshOutcome: PageOutcome = .loaded,
         nextPageOutcome: PageOutcome = .loaded,
-        nextPageDelay: Duration? = nil
+        nextPageDelay: Duration? = nil,
+        searchOutcome: SearchOutcome = .results(SearchResults(products: [], source: .remote)),
+        searchDelay: Duration? = nil
     ) {
         self.products = products
         self.refreshOutcome = refreshOutcome
         self.nextPageOutcome = nextPageOutcome
         self.nextPageDelay = nextPageDelay
+        self.searchOutcome = searchOutcome
+        self.searchDelay = searchDelay
     }
 
     nonisolated func observeCatalog() -> AsyncStream<[Product]> {
@@ -162,6 +257,12 @@ private actor FakeProductRepository: ProductRepository {
             continuation.yield(products)
             continuation.finish()
         }
+    }
+
+    func search(query: String) async -> SearchOutcome {
+        searchCallCount += 1
+        if let searchDelay { try? await Task.sleep(for: searchDelay) }
+        return searchOutcome
     }
 
     func refreshCatalogIfStale(ttl: Duration) async -> PageOutcome { refreshOutcome }
