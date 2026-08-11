@@ -10,7 +10,14 @@ import SwiftUI
 
 struct ProductDetailContentView: View {
     let product: Product
+    let quantityInCart: Int
+    let onAddToCart: () -> Void
+
     @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Incremented on every add. It is what drives both the haptic and the confirmation, so the two
+    /// cannot fall out of step.
+    @State private var addCount = 0
+    @State private var showsConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -31,6 +38,41 @@ struct ProductDetailContentView: View {
         .background(Color.background)
         .navigationTitle(product.title)
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) { addToCartButton }
+        // The system modifier, not a UIImpactFeedbackGenerator: it respects the user's settings,
+        // needs no permission and does nothing on a simulator, which is correct rather than broken
+        // (ADR §20).
+        .sensoryFeedback(.success, trigger: addCount)
+    }
+
+    private var addToCartButton: some View {
+        Button {
+            addCount += 1
+            onAddToCart()
+            showsConfirmation = true
+            Task {
+                try? await Task.sleep(for: .seconds(1.2))
+                showsConfirmation = false
+            }
+        } label: {
+            Label(buttonTitle, systemImage: showsConfirmation ? "checkmark" : "cart.badge.plus")
+                .font(.gabarito(.headline, weight: .semibold))
+                .frame(maxWidth: .infinity, minHeight: Layout.minimumTouchTarget)
+                // The visual confirmation is the primary signal; the haptic only reinforces it.
+                // Someone with haptics off must still see that something happened.
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(.glassProminent)
+        .tint(.brandPrimary)
+        .disabled(product.isOutOfStock)
+        .padding(Spacing.l)
+    }
+
+    private var buttonTitle: LocalizedStringKey {
+        if showsConfirmation { return "Added" }
+        if product.isOutOfStock { return "Out of stock" }
+        // Saying what is already there beats a silent second add.
+        return quantityInCart > 0 ? "Add another (\(quantityInCart) in cart)" : "Add to cart"
     }
 
     private var gallery: some View {
@@ -112,12 +154,18 @@ struct ProductDetailContentView: View {
 
 #Preview("Detail") {
     NavigationStack {
-        ProductDetailContentView(product: .preview)
+        ProductDetailContentView(product: .preview, quantityInCart: 0, onAddToCart: {})
+    }
+}
+
+#Preview("Already in the cart") {
+    NavigationStack {
+        ProductDetailContentView(product: .preview, quantityInCart: 2, onAddToCart: {})
     }
 }
 
 #Preview("Out of stock, no brand") {
     NavigationStack {
-        ProductDetailContentView(product: Product.previewList[1])
+        ProductDetailContentView(product: Product.previewList[1], quantityInCart: 0, onAddToCart: {})
     }
 }

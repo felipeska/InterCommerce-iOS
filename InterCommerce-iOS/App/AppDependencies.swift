@@ -17,6 +17,13 @@ struct AppDependencies: Sendable {
     let searchProducts: SearchProducts
     let observeProduct: ObserveProduct
     let refreshProduct: RefreshProduct
+    let observeCart: ObserveCart
+    let addToCart: AddToCart
+    let updateQuantity: UpdateQuantity
+    let removeFromCart: RemoveFromCart
+    let calculateTotals: CalculateCartTotals
+    /// Exposed so the summary can label the row. The rate lives in exactly one place (research.md §6).
+    let taxPolicy: TaxPolicy
     /// Handed to the design system as a plain function, so no view ever names `ImageLoader`.
     let loadImage: @Sendable (URL) async throws -> UIImage
 
@@ -32,6 +39,8 @@ struct AppDependencies: Sendable {
         let paginator = CatalogPaginator(api: ProductAPI(client: client), store: store)
         let api = ProductAPI(client: client)
         let repository = ProductRepositoryImpl(store: store, paginator: paginator, api: api)
+        let cartStore = CartStore(modelContainer: container)
+        let cartRepository = CartRepositoryImpl(store: cartStore)
         let imageLoader = ImageLoader()
 
         return AppDependencies(
@@ -41,6 +50,12 @@ struct AppDependencies: Sendable {
             searchProducts: SearchProducts(repository: repository),
             observeProduct: ObserveProduct(repository: repository),
             refreshProduct: RefreshProduct(repository: repository),
+            observeCart: ObserveCart(repository: cartRepository),
+            addToCart: AddToCart(repository: cartRepository),
+            updateQuantity: UpdateQuantity(repository: cartRepository),
+            removeFromCart: RemoveFromCart(repository: cartRepository),
+            calculateTotals: CalculateCartTotals(taxPolicy: configuration.taxPolicy),
+            taxPolicy: configuration.taxPolicy,
             loadImage: { url in try await imageLoader.image(for: url) }
         )
     }
@@ -62,6 +77,9 @@ struct AppConfiguration: Sendable {
     let baseURL: URL
     /// How long cached products stay fresh.
     let catalogTTL: Duration
+    /// Zero by default, on purpose: the brief names no rate, so the app ships the mechanism rather
+    /// than an invented tax figure (research.md §6).
+    let taxPolicy: TaxPolicy
 
     static func fromInfoPlist(
         bundle: Bundle = .main,
@@ -87,7 +105,11 @@ struct AppConfiguration: Sendable {
             // The fallback is the same value the plist holds: a missing key must not take the app
             // down, and there is nothing secret about a public base URL.
             baseURL: overrideURL ?? plistURL ?? URL(string: "https://dummyjson.com")!,
-            catalogTTL: overrideTTL ?? RefreshCatalog.defaultTTL
+            catalogTTL: overrideTTL ?? RefreshCatalog.defaultTTL,
+            taxPolicy: arguments.firstIndex(of: "-ICTaxBasisPoints")
+                .flatMap { arguments[safe: $0 + 1] }
+                .flatMap(Int.init)
+                .map(TaxPolicy.init(basisPoints:)) ?? .none
         )
     }
 }
@@ -107,6 +129,12 @@ extension AppDependencies {
         searchProducts: SearchProducts(repository: PreviewProductRepository()),
         observeProduct: ObserveProduct(repository: PreviewProductRepository()),
         refreshProduct: RefreshProduct(repository: PreviewProductRepository()),
+        observeCart: ObserveCart(repository: PreviewCartRepository()),
+        addToCart: AddToCart(repository: PreviewCartRepository()),
+        updateQuantity: UpdateQuantity(repository: PreviewCartRepository()),
+        removeFromCart: RemoveFromCart(repository: PreviewCartRepository()),
+        calculateTotals: CalculateCartTotals(),
+        taxPolicy: .none,
         loadImage: { _ in
             // `UIColor`, not an asset symbol: this closure is nonisolated and the generated colour
             // symbols are MainActor-isolated (ADR §29).
@@ -116,6 +144,19 @@ extension AppDependencies {
             }
         }
     )
+}
+
+private struct PreviewCartRepository: CartRepository {
+    func observeLines() -> AsyncStream<[CartLine]> {
+        AsyncStream { continuation in
+            continuation.yield(CartLine.previewList)
+            continuation.finish()
+        }
+    }
+
+    func add(_ product: Product, quantity: Int) async {}
+    func setQuantity(_ quantity: Int, productId: Int) async {}
+    func remove(productId: Int) async {}
 }
 
 private struct PreviewProductRepository: ProductRepository {

@@ -13,9 +13,11 @@ struct CatalogScreen: View {
     @Environment(\.scenePhase) private var scenePhase
 
     private let transitionNamespace: Namespace.ID
+    private let dependencies: AppDependencies
 
     init(dependencies: AppDependencies, transitionNamespace: Namespace.ID) {
         self.transitionNamespace = transitionNamespace
+        self.dependencies = dependencies
         _model = State(initialValue: CatalogModel(
             observeCatalog: dependencies.observeCatalog,
             refreshCatalog: dependencies.refreshCatalog,
@@ -39,6 +41,13 @@ struct CatalogScreen: View {
             transitionNamespace: transitionNamespace
         )
         .navigationTitle("InterCommerce")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: Destination.cart) {
+                    CartBadge(observeCart: dependencies.observeCart)
+                }
+            }
+        }
         .searchable(text: $model.query, prompt: "Search products")
         // With a full grid the system collapses search into a toolbar button and gives the height
         // back to the content (design.md §1 bis).

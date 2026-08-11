@@ -18,14 +18,27 @@ final class ProductDetailModel {
     /// product the user is already reading is not worth a word.
     private(set) var failure: AppError?
 
+    /// How many of this product are already in the cart, so the button can say so.
+    private(set) var quantityInCart = 0
+
     private let productId: Int
     private let observeProduct: ObserveProduct
     private let refreshProduct: RefreshProduct
+    private let observeCart: ObserveCart
+    private let addToCart: AddToCart
 
-    init(productId: Int, observeProduct: ObserveProduct, refreshProduct: RefreshProduct) {
+    init(
+        productId: Int,
+        observeProduct: ObserveProduct,
+        refreshProduct: RefreshProduct,
+        observeCart: ObserveCart,
+        addToCart: AddToCart
+    ) {
         self.productId = productId
         self.observeProduct = observeProduct
         self.refreshProduct = refreshProduct
+        self.observeCart = observeCart
+        self.addToCart = addToCart
     }
 
     var showsLoading: Bool { product == nil && failure == nil }
@@ -34,7 +47,19 @@ final class ProductDetailModel {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { [weak self] in await self?.observe() }
             group.addTask { [weak self] in await self?.refresh() }
+            group.addTask { [weak self] in await self?.observeCartQuantity() }
         }
+    }
+
+    private func observeCartQuantity() async {
+        for await lines in observeCart() {
+            quantityInCart = lines.first { $0.productId == productId }?.quantity ?? 0
+        }
+    }
+
+    func addProductToCart() async {
+        guard let product else { return }
+        await addToCart(product)
     }
 
     private func observe() async {

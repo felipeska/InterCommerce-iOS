@@ -16,14 +16,20 @@ struct ProductDetailScreen: View {
         _model = State(initialValue: ProductDetailModel(
             productId: productId,
             observeProduct: dependencies.observeProduct,
-            refreshProduct: dependencies.refreshProduct
+            refreshProduct: dependencies.refreshProduct,
+            observeCart: dependencies.observeCart,
+            addToCart: dependencies.addToCart
         ))
     }
 
     var body: some View {
         Group {
             if let product = model.product {
-                ProductDetailContentView(product: product)
+                ProductDetailContentView(
+                    product: product,
+                    quantityInCart: model.quantityInCart,
+                    onAddToCart: { Task { await model.addProductToCart() } }
+                )
             } else if let failure = model.failure {
                 // Only reachable with nothing cached: the product was never paged in and the network
                 // is unavailable.

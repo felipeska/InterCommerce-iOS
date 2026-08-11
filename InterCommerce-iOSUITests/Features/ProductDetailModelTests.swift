@@ -18,7 +18,9 @@ struct ProductDetailModelTests {
         ProductDetailModel(
             productId: id,
             observeProduct: ObserveProduct(repository: repository),
-            refreshProduct: RefreshProduct(repository: repository)
+            refreshProduct: RefreshProduct(repository: repository),
+            observeCart: ObserveCart(repository: EmptyCartRepository()),
+            addToCart: AddToCart(repository: EmptyCartRepository())
         )
     }
 
@@ -79,6 +81,13 @@ struct ProductDetailModelTests {
 
         #expect(await repository.refreshCallCount == 2)
     }
+}
+
+private struct EmptyCartRepository: CartRepository {
+    func observeLines() -> AsyncStream<[CartLine]> { AsyncStream { $0.finish() } }
+    func add(_ product: Product, quantity: Int) async {}
+    func setQuantity(_ quantity: Int, productId: Int) async {}
+    func remove(productId: Int) async {}
 }
 
 // MARK: - Fake

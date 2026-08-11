@@ -24,8 +24,7 @@ struct RootView: View {
                         ProductDetailScreen(productId: id, dependencies: dependencies)
                             .navigationTransition(.zoom(sourceID: id, in: productTransition))
                     case .cart:
-                        // Phase 5.
-                        Text("Cart")
+                        CartScreen(dependencies: dependencies) { path.removeLast(path.count) }
                     }
                 }
         }
