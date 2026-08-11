@@ -62,7 +62,7 @@ nonisolated struct ProductRepositoryImpl: ProductRepository {
     }
 
     /// Refreshes one row. The write itself — preserve `position`, only if changed, read and write in
-    /// a single actor method — is `CatalogStore.updateProduct` (ADR §26).
+    /// a single actor method — is `CatalogStore.updateProduct`.
     func refreshProduct(id: Int) async -> LoadOutcome {
         do {
             let dto = try await api.product(id: id)
@@ -78,7 +78,7 @@ nonisolated struct ProductRepositoryImpl: ProductRepository {
     ///
     /// The fallback is triggered by the request **failing**, never by asking the system whether
     /// there is a network: the OS can report a connection while a captive portal swallows every
-    /// request, and two sources of truth that disagree are worse than one (research.md §3.1).
+    /// request, and two sources of truth that disagree are worse than one.
     func search(query: String) async -> SearchOutcome {
         do {
             let page = try await api.searchProducts(query: query, limit: searchPageSize, skip: 0)
@@ -93,7 +93,7 @@ nonisolated struct ProductRepositoryImpl: ProductRepository {
         } catch {
             let reason = (try? AppError.mapping(error)) ?? .unknown
             // Whatever has already been downloaded. Documented limitation: offline search only finds
-            // products the app has seen (research.md §5.3).
+            // products the app has seen.
             return .results(SearchResults(products: await store.search(query: query), source: .local(reason: reason)))
         }
     }

@@ -15,7 +15,7 @@ import SwiftData
 @Model
 nonisolated final class ProductEntity {
     /// The grid always sorts by `position`, so it gets an index. Available because the deployment
-    /// target is iOS 26: `#Index` is iOS 18 (ADR §22).
+    /// target is iOS 26: `#Index` is iOS 18.
     #Index<ProductEntity>([\.position])
 
     /// Unique so that inserting an id that already exists upserts instead of duplicating.
@@ -25,10 +25,10 @@ nonisolated final class ProductEntity {
     /// Not `description`: that name collides with `CustomStringConvertible` on a class.
     var productDescription: String
     var category: String
-    /// `""` when the API omits it, normalised once in the mapper (ADR §32). Not optional, so the
+    /// `""` when the API omits it, normalised once in the mapper. Not optional, so the
     /// local search predicate does not have to carry a `??` — which SwiftData translates poorly.
     var brand: String
-    /// Money is an integer. Never `Double` (ADR §3).
+    /// Money is an integer. Never `Double`.
     var listCents: Int64
     var discountPercentage: Double
     var rating: Double
@@ -104,7 +104,7 @@ nonisolated final class CatalogRemoteKey {
 /// - Important: there is deliberately **no relationship to `ProductEntity`**. A refresh deletes
 ///   every product, and a `@Relationship` — even the innocent-looking optional kind — would let the
 ///   default delete rule empty the user's cart on the first refresh. That is the most likely
-///   data-loss bug in this brief (ADR §12).
+///   data-loss bug in this brief.
 ///
 ///   The fields below are a snapshot taken when the product was added, which also means the user
 ///   keeps seeing the price they accepted rather than one that changed underneath them.

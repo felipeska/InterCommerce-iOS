@@ -2,8 +2,9 @@
 //  CatalogPaginatorTests.swift
 //  Data tests
 //
-//  One test per rule from plan.md §3.3. These are the guarantees Paging 3 provides on the Android
-//  side; here they are ours to keep, so they are the ones worth pinning hardest.
+//  One test per rule the paginator has to honour: idempotence, no write on failure, a hard stop at
+//  the end of the catalogue, TTL, and cancellation. On Android these are what Paging 3 provides;
+//  here they are ours to keep, so they are the ones worth pinning hardest.
 //
 
 import Foundation

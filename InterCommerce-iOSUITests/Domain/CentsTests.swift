@@ -4,7 +4,7 @@
 //
 //  These deliberately import neither SwiftUI nor SwiftData, and the suite is NOT `@MainActor`.
 //  That is the evidence that the domain is isolated: guard G7 checks the imports, and if anyone
-//  ever pins `Cents` to the main actor, these tests stop compiling (ADR §29).
+//  ever pins `Cents` to the main actor, these tests stop compiling.
 //
 
 import Testing

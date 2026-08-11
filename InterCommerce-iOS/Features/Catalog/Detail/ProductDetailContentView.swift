@@ -3,7 +3,7 @@
 //  Features · Catalog · Detail
 //
 //  Stateless. Adapts to width: one scrolling column on a phone, gallery beside the details when
-//  there is room (design.md §6).
+//  there is room.
 //
 
 import SwiftUI
@@ -41,7 +41,7 @@ struct ProductDetailContentView: View {
         .safeAreaInset(edge: .bottom) { addToCartButton }
         // The system modifier, not a UIImpactFeedbackGenerator: it respects the user's settings,
         // needs no permission and does nothing on a simulator, which is correct rather than broken
-        // (ADR §20).
+        //.
         .sensoryFeedback(.success, trigger: addCount)
     }
 

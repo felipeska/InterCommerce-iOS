@@ -29,7 +29,7 @@ nonisolated struct SearchResults: Equatable, Sendable {
 /// The result of asking to search.
 ///
 /// There is no `failed` case, and that is the point: a failed request is not a failed search, it is
-/// a search answered from the cache (research.md §5.3). The only thing that can stop a search
+/// a search answered from the cache. The only thing that can stop a search
 /// without an answer is cancellation — the user typing another character.
 nonisolated enum SearchOutcome: Equatable, Sendable {
     case results(SearchResults)

@@ -6,7 +6,7 @@
 //
 //  Left to itself, the same formula ends up in three places — the card, the detail screen and the
 //  totals — with three different roundings, and then the discount shown per product does not add up
-//  to the discount shown in the total. This type exists so that cannot happen (ADR §4).
+//  to the discount shown in the total. This type exists so that cannot happen.
 //
 
 /// A list price and the discount that applies to it.

@@ -4,7 +4,7 @@
 //
 //  What `AsyncImage` would be if it kept a disk cache and coalesced requests. The loading itself
 //  lives in Data; this view only knows *a function that returns an image*, injected through the
-//  environment. That is what keeps `DesignSystem` from naming a `Data` type (architecture.md §2 bis).
+//  environment. That is what keeps `DesignSystem` from naming a `Data` type.
 //
 
 import SwiftUI
@@ -113,7 +113,7 @@ extension CachedAsyncImage where Placeholder == AnyView, Failure == AnyView {
     .clipShape(.rect(cornerRadius: CornerRadius.card))
     .padding(Spacing.l)
     // `UIColor` and not `Color.brandPrimary`: this closure is `@Sendable` and therefore
-    // nonisolated, while the generated asset symbols are MainActor-isolated (ADR §29).
+    // nonisolated, while the generated asset symbols are MainActor-isolated.
     .environment(\.loadImage) { _ in
         UIGraphicsImageRenderer(size: CGSize(width: 40, height: 40)).image { context in
             UIColor.systemPurple.setFill()

@@ -5,7 +5,7 @@
 //  `AsyncImage` is the obvious answer and it does not fit the brief: it gives no usable disk cache
 //  across launches, re-downloads when a cell scrolls back into view, and does not coalesce two
 //  requests for the same URL. The brief evaluates exactly those three things, so this is ~90 lines
-//  of our own (ADR §25).
+//  of our own.
 //
 //  An actor rather than a lock: the in-flight table is shared mutable state, and the isolation makes
 //  the check-then-insert atomic for free.

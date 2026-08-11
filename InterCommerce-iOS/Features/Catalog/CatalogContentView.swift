@@ -40,7 +40,7 @@ struct CatalogContentView: View {
                         .buttonStyle(.plain)
                         // The zoom transition: the card is the source the detail grows out of. If
                         // the ids ever stopped matching, the system falls back to a plain push —
-                        // a benign failure mode (design.md §8).
+                        // a benign failure mode.
                         .matchedTransitionSource(id: product.id, in: transitionNamespace ?? fallbackNamespace)
                     }
                 }
@@ -52,7 +52,7 @@ struct CatalogContentView: View {
         }
         .background(Color.background)
         // The system fades content under the toolbar; painting our own background behind the bar
-        // would fight it (ADR §28).
+        // would fight it.
         .scrollEdgeEffectStyle(.soft, for: .top)
         .safeAreaInset(edge: .top) {
             if isOffline {

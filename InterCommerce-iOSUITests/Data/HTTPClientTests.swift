@@ -2,9 +2,9 @@
 //  HTTPClientTests.swift
 //  Data tests
 //
-//  One case per row of the error table in architecture.md §8, plus the two rules that are easy to
-//  break silently: the middleware chain must wrap in order, and cancellation must never become an
-//  AppError.
+//  One case per kind of failure the client has to translate — 404, 5xx, no connectivity, timeout,
+//  malformed JSON, empty body — plus the two rules that are easy to break silently: the middleware
+//  chain must wrap in order, and cancellation must never become an AppError.
 //
 
 import Foundation

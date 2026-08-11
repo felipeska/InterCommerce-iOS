@@ -3,11 +3,11 @@
 //  Features · Catalog · Components
 //
 //  Shows a price. It **only formats**: the discounted amount, the struck-through original and the
-//  percentage all come out of `Price`. No view in this app does money arithmetic (ADR §4).
+//  percentage all come out of `Price`. No view in this app does money arithmetic.
 //
 //  It lives with the catalogue rather than in DesignSystem because only the catalogue and its detail
 //  screen use it — the cart formats with `MoneyFormat` directly. It moves up when a second feature
-//  needs it, not before (ADR §27).
+//  needs it, not before.
 //
 
 import SwiftUI

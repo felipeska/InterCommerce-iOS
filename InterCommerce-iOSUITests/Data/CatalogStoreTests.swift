@@ -66,7 +66,7 @@ struct CatalogStoreTests {
         #expect(cursor?.hasMore == false, "The cursor should know the catalogue is exhausted")
     }
 
-    /// A refresh truncates to one page. That is the accepted cost of replace-and-reinsert (ADR §11),
+    /// A refresh truncates to one page. That is the accepted cost of replace-and-reinsert,
     /// and it is written down as a test so nobody "fixes" it later by accident.
     @Test("A refresh replaces everything, it does not merge")
     func refreshTruncates() async throws {
@@ -160,7 +160,7 @@ struct CatalogStoreTests {
         #expect(await store.subscriberCount == 0, "The store is still holding a dead subscriber")
     }
 
-    // MARK: - The second writer (ADR §26)
+    // MARK: - The second writer
 
     @Test("A row refresh keeps the position it already had")
     func rowRefreshPreservesPosition() async throws {
@@ -175,7 +175,7 @@ struct CatalogStoreTests {
         #expect(products[1].title == "Renamed 2")
     }
 
-    /// The race the actor exists to close (ADR §26): a page replace and a row refresh landing at the
+    /// The race the actor exists to close: a page replace and a row refresh landing at the
     /// same time must not leave the grid reordered or a position duplicated.
     @Test("A page refresh and a row refresh at the same time keep positions intact")
     func concurrentWritersKeepPositions() async throws {

@@ -2,7 +2,7 @@
 //  CatalogPaginator.swift
 //  Data · Catalog
 //
-//  What Paging 3 gave the Android sibling for free, written by hand (ADR §2). An actor, because the
+//  What Paging 3 gave the Android sibling for free, written by hand. An actor, because the
 //  trigger is the last cell appearing — which fires several times during a fast scroll — and the
 //  check-then-load has to be atomic. A `Bool` on the main actor looks like it is enough right up
 //  until two callers slip between the `await` and the assignment.
@@ -25,7 +25,7 @@ actor CatalogPaginator {
     /// Refreshes only if the cache has aged past `ttl`.
     ///
     /// Fresh cache means no request at all, which is what lets the app open offline with content
-    /// instead of a spinner (research.md §5.1).
+    /// instead of a spinner.
     func refreshIfStale(ttl: Duration, now: Date = .now) async -> LoadOutcome {
         guard let cursor = await store.pageCursor() else {
             return await refresh(now: now) // Nothing cached yet.

@@ -95,7 +95,7 @@ struct PersistenceTests {
     // MARK: - The one that protects the user's data
 
     /// The single most likely data-loss bug in this brief: a refresh deletes every product, and if
-    /// the cart hung off a relationship it would be emptied along with them (ADR §12). This test is
+    /// the cart hung off a relationship it would be emptied along with them. This test is
     /// the reason `CartItemEntity` carries a snapshot and no `@Relationship`.
     @Test("Purging the whole catalogue leaves the cart intact")
     func catalogRefreshDoesNotTouchTheCart() throws {

@@ -11,7 +11,7 @@
 //   2. So `UIFont(name: "Gabarito-Bold")` returns **nil**: that name does not exist.
 //   3. Setting the `wght` axis does resolve the real face (700 -> "Gabarito-Regular_Bold").
 //
-//  Decision (design.md §3): `Font.gabarito` selects weight through the axis, not by name. The
+//  Decision: `Font.gabarito` selects weight through the axis, not by name. The
 //  derived names are an implementation detail of how CoreText registers instances and may change
 //  between releases; the axis is the semantic API and accepts any weight in range.
 //
@@ -40,7 +40,7 @@ struct FontRegistrationTests {
     func canonicalWeightNamesDoNotExist() {
         #expect(
             UIFont(name: "Gabarito-Bold", size: 17) == nil,
-            "Gabarito-Bold now resolves: iOS changed how it registers instances. Revisit design.md §3."
+            "Gabarito-Bold now resolves: iOS changed how it registers variable font instances, so the weight helper can be simplified to use names."
         )
     }
 

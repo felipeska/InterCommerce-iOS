@@ -27,7 +27,7 @@ struct InterCommerce_iOSApp: App {
             switch graph {
             case .success(let dependencies):
                 // The container reaches the stores through this graph, not through the environment:
-                // no view reads SwiftData directly (ADR §30), so `.modelContainer` would inject
+                // no view reads SwiftData directly, so `.modelContainer` would inject
                 // something nothing consumes.
                 RootView()
                     .environment(\.dependencies, dependencies)

@@ -4,7 +4,7 @@
 //
 //  Empty, error and offline. They are built on `ContentUnavailableView` rather than hand-rolled:
 //  the system one is already accessible, already matches the platform, and gets the Liquid Glass
-//  treatment for free (design.md §4.1).
+//  treatment for free.
 //
 
 import SwiftUI
@@ -75,7 +75,7 @@ struct OfflineBanner: View {
             .padding(.horizontal, Spacing.m)
             .padding(.vertical, Spacing.s)
             // Glass here is deliberate and rationed: it floats over the grid without hiding it
-            // (ADR §28). Not interactive, so no `.interactive()`.
+            //. Not interactive, so no `.interactive()`.
             .glassEffect(.regular, in: .capsule)
             .accessibilityElement(children: .combine)
     }

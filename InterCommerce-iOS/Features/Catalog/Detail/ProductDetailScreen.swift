@@ -4,7 +4,7 @@
 //
 //  Owns the viewModel. Receives the id, never the product: the screen re-reads it from the store, which
 //  is what keeps a single source of truth and lets the row refresh reach the screen on its own
-//  (architecture.md §7).
+// .
 //
 
 import SwiftUI

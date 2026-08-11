@@ -3,7 +3,7 @@
 //  DesignSystem
 //
 //  The loading skeleton effect, in ~30 lines. No dependency: what a shimmer library adds here is a
-//  package, and what it hides is a masked gradient (ADR §19).
+//  package, and what it hides is a masked gradient.
 //
 
 import SwiftUI

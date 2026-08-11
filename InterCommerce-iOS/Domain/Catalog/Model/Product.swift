@@ -13,10 +13,10 @@ nonisolated struct Product: Identifiable, Hashable, Sendable {
     let title: String
     let summary: String
     let category: String
-    /// `""` when the API omits it — normalised once in the mapper (ADR §32). Callers check
+    /// `""` when the API omits it — normalised once in the mapper. Callers check
     /// `brand.isEmpty`, not `brand == nil`.
     let brand: String
-    /// Money and its discount rule, together. Nothing else computes a discount (ADR §4).
+    /// Money and its discount rule, together. Nothing else computes a discount.
     let price: Price
     let rating: Double
     let stock: Int

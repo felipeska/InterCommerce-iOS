@@ -3,7 +3,7 @@
 //  Features tests
 //
 //  Fakes are plain structs — there is no mocking library and none is needed. The model takes three
-//  use cases, so wiring a scenario is three lines (ADR §16, §31).
+//  use cases, so wiring a scenario is three lines.
 //
 
 import Foundation

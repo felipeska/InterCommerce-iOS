@@ -3,7 +3,7 @@
 //  Features · Catalog · Detail
 //
 //  Cache first, network second. The product shows instantly because it is already stored — the
-//  refresh happens behind it and, if it fails, nobody finds out (research.md §4).
+//  refresh happens behind it and, if it fails, nobody finds out.
 //
 
 import Foundation

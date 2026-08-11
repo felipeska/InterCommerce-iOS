@@ -7,7 +7,7 @@
 //  Read the signatures and notice what is absent: no `ModelContext`, no `ProductEntity`, no
 //  `URLSession`, no DTO — and no `searchRemote`/`searchLocal` either. Whether an answer came from
 //  the network or from disk is Data's business; a domain contract that named the transport would
-//  force every caller to re-implement the fallback (ADR §14).
+//  force every caller to re-implement the fallback.
 //
 
 import Foundation
@@ -30,13 +30,13 @@ nonisolated protocol ProductRepository: Sendable {
     /// content on its first frame even with no network.
     func observeProduct(id: Int) -> AsyncStream<Product?>
 
-    /// Refreshes one product in the background. The second writer of `ProductEntity` (ADR §26).
+    /// Refreshes one product in the background. The second writer of `ProductEntity`.
     func refreshProduct(id: Int) async -> LoadOutcome
 
     /// Searches the catalogue.
     ///
     /// One method, not `searchRemote` plus `searchLocal`: deciding when to serve from disk is Data's
     /// job, and a domain contract that named the transport would push that decision into every
-    /// caller (ADR §14).
+    /// caller.
     func search(query: String) async -> SearchOutcome
 }

@@ -3,7 +3,7 @@
 //  Features · Catalog
 //
 //  Owns the model and wires it to the view. The dependencies arrive from the parent, because
-//  `@Environment` cannot be read in an initialiser (ADR §31).
+//  `@Environment` cannot be read in an initialiser.
 //
 
 import SwiftUI
@@ -50,7 +50,7 @@ struct CatalogScreen: View {
         }
         .searchable(text: $viewModel.query, prompt: "Search products")
         // With a full grid the system collapses search into a toolbar button and gives the height
-        // back to the content (design.md §1 bis).
+        // back to the content.
         .searchToolbarBehavior(.minimize)
         // `.task(id:)` is the debounce *and* the cancellation of the stale query: changing the id
         // tears the previous run down before the next one starts.

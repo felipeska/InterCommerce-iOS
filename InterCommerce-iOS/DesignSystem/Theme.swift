@@ -3,7 +3,7 @@
 //  DesignSystem
 //
 //  Colour and type. Nine semantic tokens, not a palette: a view asks for `.textSecondary`, never for
-//  a grey. A literal colour in a view is a review failure (design.md §2).
+//  a grey. A literal colour in a view is a review failure.
 //
 
 import SwiftUI
@@ -17,7 +17,7 @@ import UIKit
 // only shadow them — the first attempt did exactly that and collided.
 //
 // The tokens are: brandPrimary, brandPrimaryContent, background, surface, surfaceElevated,
-// textPrimary, textSecondary, separatorLine, discount (design.md §2).
+// textPrimary, textSecondary, separatorLine, discount.
 //
 // `separatorLine` is not called `separator`: that name collides with `UIColor.separator` and breaks
 // symbol generation.
@@ -31,7 +31,7 @@ extension Font {
     /// The weight is applied through the font's `wght` **variation axis**, not by name. Phase 0
     /// established why: this is a variable font, and iOS registers its instances under derived
     /// names (`Gabarito-Regular_Bold`), so `UIFont(name: "Gabarito-Bold")` is `nil`. Those derived
-    /// names are an implementation detail; the axis is the semantic API (design.md §3).
+    /// names are an implementation detail; the axis is the semantic API.
     static func gabarito(_ style: Font.TextStyle, weight: GabaritoWeight = .regular) -> Font {
         let textStyle = style.uiTextStyle
         let descriptor = UIFontDescriptor(fontAttributes: [

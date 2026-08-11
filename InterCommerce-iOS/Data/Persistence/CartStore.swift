@@ -62,7 +62,7 @@ actor CartStore {
     /// Adds a line, or raises the quantity of the one already there.
     ///
     /// The snapshot is only taken the **first** time: adding a second unit must not silently adopt a
-    /// price that changed since the user made the decision (ADR §12).
+    /// price that changed since the user made the decision.
     func add(_ product: Product, quantity: Int, now: Date = .now) throws {
         let productId = product.id
         var descriptor = FetchDescriptor<CartItemEntity>(predicate: #Predicate { $0.productId == productId })

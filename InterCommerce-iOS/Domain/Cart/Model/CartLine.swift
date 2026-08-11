@@ -3,7 +3,7 @@
 //  Domain · Cart · Model
 //
 //  One line of the cart: a snapshot of what the user added, not a pointer to a catalogue that gets
-//  purged on every refresh (ADR §12).
+//  purged on every refresh.
 //
 
 import Foundation
@@ -20,7 +20,7 @@ nonisolated struct CartLine: Identifiable, Hashable, Sendable {
 
     var id: Int { productId }
 
-    /// Deliberately delegating: the discount rule lives in `Price` and nowhere else (ADR §4).
+    /// Deliberately delegating: the discount rule lives in `Price` and nowhere else.
     var gross: Cents { price.gross(quantity: quantity) }
     var discount: Cents { price.discount(quantity: quantity) }
     var net: Cents { price.net(quantity: quantity) }

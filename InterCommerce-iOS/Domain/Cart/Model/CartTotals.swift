@@ -22,7 +22,7 @@ nonisolated struct CartTotals: Equatable, Sendable {
 /// **The default is zero, and that is a decision, not an oversight.** The brief names no rate, so
 /// the app ships the *mechanism* — modelled, injected and tested with non-zero rates — rather than
 /// inventing a tax figure. The row is shown even at zero, and nothing in the code or the UI calls it
-/// "IVA" or ties it to a country (research.md §6).
+/// "IVA" or ties it to a country.
 nonisolated struct TaxPolicy: Equatable, Sendable {
     let basisPoints: Int
 

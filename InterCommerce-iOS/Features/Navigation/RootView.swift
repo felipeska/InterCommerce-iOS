@@ -3,7 +3,7 @@
 //  Features · Navigation
 //
 //  The navigation stack. Destinations are a `Hashable` enum carrying primitives only: the detail
-//  screen re-reads its product from the store rather than receiving it (architecture.md §7).
+//  screen re-reads its product from the store rather than receiving it.
 //
 
 import SwiftUI

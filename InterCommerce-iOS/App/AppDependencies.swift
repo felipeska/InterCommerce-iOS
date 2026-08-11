@@ -3,7 +3,7 @@
 //  App · composition root
 //
 //  The only place in the app that builds concrete types. Everything above receives use cases and has
-//  no idea a network or a database exists (ADR §31).
+//  no idea a network or a database exists.
 //
 
 import Foundation
@@ -22,7 +22,7 @@ struct AppDependencies: Sendable {
     let updateQuantity: UpdateQuantity
     let removeFromCart: RemoveFromCart
     let calculateTotals: CalculateCartTotals
-    /// Exposed so the summary can label the row. The rate lives in exactly one place (research.md §6).
+    /// Exposed so the summary can label the row. The rate lives in exactly one place.
     let taxPolicy: TaxPolicy
     /// Handed to the design system as a plain function, so no view ever names `ImageLoader`.
     let loadImage: @Sendable (URL) async throws -> UIImage
@@ -78,7 +78,7 @@ struct AppConfiguration: Sendable {
     /// How long cached products stay fresh.
     let catalogTTL: Duration
     /// Zero by default, on purpose: the brief names no rate, so the app ships the mechanism rather
-    /// than an invented tax figure (research.md §6).
+    /// than an invented tax figure.
     let taxPolicy: TaxPolicy
 
     static func fromInfoPlist(
@@ -137,7 +137,7 @@ extension AppDependencies {
         taxPolicy: .none,
         loadImage: { _ in
             // `UIColor`, not an asset symbol: this closure is nonisolated and the generated colour
-            // symbols are MainActor-isolated (ADR §29).
+            // symbols are MainActor-isolated.
             UIGraphicsImageRenderer(size: CGSize(width: 60, height: 60)).image { context in
                 UIColor.systemGray5.setFill()
                 context.fill(CGRect(x: 0, y: 0, width: 60, height: 60))

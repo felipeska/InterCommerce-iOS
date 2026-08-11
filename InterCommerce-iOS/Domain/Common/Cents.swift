@@ -37,7 +37,7 @@ nonisolated struct Cents: RawRepresentable, Hashable, Comparable, Sendable {
 // members declared in extensions: with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` those inherit
 // the main actor, and the first consumer of `Cents` outside the main actor — `Price` — failed to
 // compile with "call to main actor-isolated operator function '+'". Easy to miss, because the type
-// declaration looks like it settled the question (ADR §29).
+// declaration looks like it settled the question.
 
 // `AdditiveArithmetic` and not `Numeric`, on purpose: adding two amounts is meaningful, and
 // `lines.map(\.net).reduce(.zero, +)` reads well. Multiplying two amounts of money is meaningless,

@@ -22,7 +22,7 @@ nonisolated struct ProductDTO: Decodable, Sendable {
     let description: String
     let category: String
     /// Absent for several categories (`groceries`, `furniture`). Optional here and **only** here:
-    /// the mapper normalises it to `""` (ADR §32). A non-optional `String` would make `Codable`
+    /// the mapper normalises it to `""`. A non-optional `String` would make `Codable`
     /// throw, turning a missing brand into "malformed data".
     let brand: String?
     let price: Double

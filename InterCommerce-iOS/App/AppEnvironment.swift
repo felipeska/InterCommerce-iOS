@@ -8,6 +8,6 @@
 import SwiftUI
 
 extension EnvironmentValues {
-    /// The dependency graph. Screens read it to *build* their model; models never read it (ADR §31).
+    /// The dependency graph. Screens read it to *build* their model; models never read it.
     @Entry var dependencies: AppDependencies = .preview
 }

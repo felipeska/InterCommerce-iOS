@@ -7,7 +7,7 @@
 //  owns the context.
 //
 //  Two writers exist by design — pages (the paginator) and one row (the detail refresh) — and both
-//  live inside this actor. The contract is in ADR §26; the trap it prevents is doing a read here and
+//  live inside this actor, each with its own contract; the trap that buys is doing a read here and
 //  a write from outside, which reopens the race with the compiler's blessing.
 //
 
@@ -17,7 +17,7 @@ import SwiftData
 @ModelActor
 actor CatalogStore {
 
-    /// Live readers. The UI observes domain values through these, never SwiftData (ADR §30).
+    /// Live readers. The UI observes domain values through these, never SwiftData.
     private var subscribers: [UUID: AsyncStream<[Product]>.Continuation] = [:]
 
     // MARK: - Observation
@@ -78,7 +78,7 @@ actor CatalogStore {
     /// The offline half of search: whatever has already been downloaded.
     ///
     /// `brand` is a non-optional `String` precisely so this predicate does not need a `??` inside it
-    /// (ADR §32).
+    ///.
     func search(query: String) -> [Product] {
         let descriptor = FetchDescriptor<ProductEntity>(
             predicate: #Predicate {
@@ -90,7 +90,7 @@ actor CatalogStore {
         return entities.map(ProductMapper.domain(from:))
     }
 
-    /// The raw ordering, for the test that guards the two-writer invariant (ADR §26). Reading it
+    /// The raw ordering, for the test that guards the two-writer invariant. Reading it
     /// through the domain type would hide exactly the thing under test.
     func debugPositions() -> [Int] {
         let descriptor = FetchDescriptor<ProductEntity>(sortBy: [SortDescriptor(\.position)])
@@ -109,7 +109,7 @@ actor CatalogStore {
     ///
     /// - Important: the delete happens **here**, after the response arrived, and in the same save as
     ///   the insert. Deleting before the request would leave the table empty whenever a refresh
-    ///   fails offline — which is exactly the scenario the brief tests (ADR §11).
+    ///   fails offline — which is exactly the scenario the brief tests.
     func replaceFirstPage(_ dtos: [ProductDTO], total: Int, now: Date = .now) throws {
         try modelContext.delete(model: ProductEntity.self)
 
@@ -133,7 +133,7 @@ actor CatalogStore {
         broadcast()
     }
 
-    /// The second writer (ADR §26): one row, from the detail screen.
+    /// The second writer: one row, from the detail screen.
     ///
     /// Read and write happen in **this one method**. Splitting them — fetching from outside and
     /// writing back — reopens the race the actor is here to close, and the compiler would not

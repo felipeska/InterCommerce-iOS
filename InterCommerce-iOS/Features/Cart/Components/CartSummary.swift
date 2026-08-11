@@ -3,7 +3,7 @@
 //  Features · Cart · Components
 //
 //  Opaque, not glass: these are the figures the person is deciding on, and legibility beats the
-//  effect (ADR §28).
+//  effect.
 //
 
 import SwiftUI

@@ -3,7 +3,7 @@
 //  Data · Cart
 //
 //  Product -> snapshot -> domain line. The snapshot is the whole point: after this, the cart owes
-//  the catalogue nothing (ADR §12).
+//  the catalogue nothing.
 //
 
 import Foundation

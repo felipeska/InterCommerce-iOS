@@ -3,7 +3,7 @@
 //  Domain · Catalog · UseCase
 //
 //  The door into the domain. Reads and commands both go through here, so there is no exception to
-//  remember: a screen never talks to a repository, and never to SwiftData (ADR §14, §30).
+//  remember: a screen never talks to a repository, and never to SwiftData.
 //
 //  Three of these are one-liners. They are not ceremony — they are the *only* path to the data, and
 //  that is what makes the boundary checkable rather than aspirational.
@@ -25,7 +25,7 @@ nonisolated struct ObserveCatalog: Sendable {
 
 nonisolated struct RefreshCatalog: Sendable {
     /// How long cached products stay fresh. 30 minutes: long enough that reopening the app is
-    /// instant, short enough that prices are not stale for a session (research.md §5.1).
+    /// instant, short enough that prices are not stale for a session.
     static let defaultTTL: Duration = .seconds(30 * 60)
 
     private let repository: any ProductRepository
@@ -59,7 +59,7 @@ nonisolated struct LoadNextPage: Sendable {
     }
 }
 
-/// Searching. A delegator — the remote-then-local decision lives in `Data` (ADR §14) — but it is the
+/// Searching. A delegator — the remote-then-local decision lives in `Data` — but it is the
 /// only door to it, which is what keeps the boundary checkable.
 nonisolated struct SearchProducts: Sendable {
     /// Below this, a query is noise: two characters is where results start being about what the
@@ -83,7 +83,7 @@ nonisolated struct SearchProducts: Sendable {
 
 /// The detail screen's read. Split from `RefreshProduct` on purpose: one is a reactive read that
 /// works offline, the other a write over the network, and a single `GetProduct` hid the fact that
-/// the second is a writer (ADR §26).
+/// the second is a writer.
 nonisolated struct ObserveProduct: Sendable {
     private let repository: any ProductRepository
 

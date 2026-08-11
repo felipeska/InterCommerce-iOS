@@ -3,7 +3,7 @@
 //  Features · Catalog · Components
 //
 //  One product in the grid. Opaque, never glass: the title and price have to stay readable over any
-//  photograph, and that is a job for a solid surface (ADR §28).
+//  photograph, and that is a job for a solid surface.
 //
 
 import SwiftUI

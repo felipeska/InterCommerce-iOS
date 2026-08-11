@@ -4,10 +4,10 @@
 //
 //  Screen state. It orchestrates refresh and paging, and it *observes* the catalogue — it never
 //  fetches it. Content always arrives through the stream, which is what makes losing the network a
-//  banner rather than an empty screen (ADR §30).
+//  banner rather than an empty screen.
 //
 //  It takes the three use cases it uses, not the whole dependency graph: the initialiser documents
-//  what this screen can do, and a test needs three fakes and one line (ADR §31).
+//  what this screen can do, and a test needs three fakes and one line.
 //
 
 import Foundation
@@ -120,7 +120,7 @@ final class CatalogViewModel {
     /// Returning to the foreground. Re-checks the TTL, because `start()` does not run again while
     /// the process is alive.
     ///
-    /// Deliberately **not** unconditional: a full refresh truncates to one page (ADR §11), and
+    /// Deliberately **not** unconditional: a full refresh truncates to one page, and
     /// yanking someone back to the top of a list they were halfway down is worse than data that is
     /// forty minutes old. It only refreshes what the TTL says is stale.
     func refreshIfStaleOnResume() async {
