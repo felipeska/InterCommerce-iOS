@@ -15,6 +15,8 @@ struct AppDependencies: Sendable {
     let refreshCatalog: RefreshCatalog
     let loadNextPage: LoadNextPage
     let searchProducts: SearchProducts
+    let observeProduct: ObserveProduct
+    let refreshProduct: RefreshProduct
     /// Handed to the design system as a plain function, so no view ever names `ImageLoader`.
     let loadImage: @Sendable (URL) async throws -> UIImage
 
@@ -37,6 +39,8 @@ struct AppDependencies: Sendable {
             refreshCatalog: RefreshCatalog(repository: repository, ttl: configuration.catalogTTL),
             loadNextPage: LoadNextPage(repository: repository),
             searchProducts: SearchProducts(repository: repository),
+            observeProduct: ObserveProduct(repository: repository),
+            refreshProduct: RefreshProduct(repository: repository),
             loadImage: { url in try await imageLoader.image(for: url) }
         )
     }
@@ -101,6 +105,8 @@ extension AppDependencies {
         refreshCatalog: RefreshCatalog(repository: PreviewProductRepository()),
         loadNextPage: LoadNextPage(repository: PreviewProductRepository()),
         searchProducts: SearchProducts(repository: PreviewProductRepository()),
+        observeProduct: ObserveProduct(repository: PreviewProductRepository()),
+        refreshProduct: RefreshProduct(repository: PreviewProductRepository()),
         loadImage: { _ in
             // `UIColor`, not an asset symbol: this closure is nonisolated and the generated colour
             // symbols are MainActor-isolated (ADR §29).
@@ -120,9 +126,18 @@ private struct PreviewProductRepository: ProductRepository {
         }
     }
 
-    func refreshCatalogIfStale(ttl: Duration) async -> PageOutcome { .noop }
-    func refreshCatalog() async -> PageOutcome { .noop }
-    func loadNextPage() async -> PageOutcome { .noop }
+    func refreshCatalogIfStale(ttl: Duration) async -> LoadOutcome { .noop }
+    func refreshCatalog() async -> LoadOutcome { .noop }
+    func loadNextPage() async -> LoadOutcome { .noop }
+
+    func observeProduct(id: Int) -> AsyncStream<Product?> {
+        AsyncStream { continuation in
+            continuation.yield(Product.previewList.first { $0.id == id } ?? .preview)
+            continuation.finish()
+        }
+    }
+
+    func refreshProduct(id: Int) async -> LoadOutcome { .noop }
     func search(query: String) async -> SearchOutcome {
         .results(SearchResults(products: Product.previewList, source: .remote))
     }

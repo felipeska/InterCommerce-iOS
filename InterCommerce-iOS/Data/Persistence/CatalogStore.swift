@@ -90,6 +90,13 @@ actor CatalogStore {
         return entities.map(ProductMapper.domain(from:))
     }
 
+    /// The raw ordering, for the test that guards the two-writer invariant (ADR §26). Reading it
+    /// through the domain type would hide exactly the thing under test.
+    func debugPositions() -> [Int] {
+        let descriptor = FetchDescriptor<ProductEntity>(sortBy: [SortDescriptor(\.position)])
+        return ((try? modelContext.fetch(descriptor)) ?? []).map(\.position)
+    }
+
     func pageCursor() -> PageCursor? {
         let descriptor = FetchDescriptor<CatalogRemoteKey>()
         guard let key = (try? modelContext.fetch(descriptor))?.first else { return nil }

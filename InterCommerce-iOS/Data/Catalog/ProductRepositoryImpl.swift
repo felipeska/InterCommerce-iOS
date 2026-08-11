@@ -35,16 +35,43 @@ nonisolated struct ProductRepositoryImpl: ProductRepository {
         }
     }
 
-    func refreshCatalogIfStale(ttl: Duration) async -> PageOutcome {
+    func refreshCatalogIfStale(ttl: Duration) async -> LoadOutcome {
         await paginator.refreshIfStale(ttl: ttl)
     }
 
-    func refreshCatalog() async -> PageOutcome {
+    func refreshCatalog() async -> LoadOutcome {
         await paginator.refresh()
     }
 
-    func loadNextPage() async -> PageOutcome {
+    func loadNextPage() async -> LoadOutcome {
         await paginator.loadNextPage()
+    }
+
+    func observeProduct(id: Int) -> AsyncStream<Product?> {
+        // Derived from the catalogue stream rather than a second subscription: one source of truth,
+        // and the detail sees a row refresh the moment the store broadcasts it.
+        AsyncStream { continuation in
+            let task = Task {
+                for await products in await store.productsStream() {
+                    continuation.yield(products.first { $0.id == id })
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    /// Refreshes one row. The write itself — preserve `position`, only if changed, read and write in
+    /// a single actor method — is `CatalogStore.updateProduct` (ADR §26).
+    func refreshProduct(id: Int) async -> LoadOutcome {
+        do {
+            let dto = try await api.product(id: id)
+            try Task.checkCancellation()
+            try await store.updateProduct(from: dto)
+            return .loaded
+        } catch {
+            return LoadOutcome(error)
+        }
     }
 
     /// Remote first, cache second.

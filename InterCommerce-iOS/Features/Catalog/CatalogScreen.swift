@@ -12,7 +12,10 @@ struct CatalogScreen: View {
     @State private var model: CatalogModel
     @Environment(\.scenePhase) private var scenePhase
 
-    init(dependencies: AppDependencies) {
+    private let transitionNamespace: Namespace.ID
+
+    init(dependencies: AppDependencies, transitionNamespace: Namespace.ID) {
+        self.transitionNamespace = transitionNamespace
         _model = State(initialValue: CatalogModel(
             observeCatalog: dependencies.observeCatalog,
             refreshCatalog: dependencies.refreshCatalog,
@@ -32,7 +35,8 @@ struct CatalogScreen: View {
             showsEmptyState: model.showsEmptyState,
             appendPhase: model.append,
             onRetry: { Task { await model.refreshNow() } },
-            onReachEnd: { Task { await model.loadMore() } }
+            onReachEnd: { Task { await model.loadMore() } },
+            transitionNamespace: transitionNamespace
         )
         .navigationTitle("InterCommerce")
         .searchable(text: $model.query, prompt: "Search products")

@@ -26,7 +26,7 @@ actor CatalogPaginator {
     ///
     /// Fresh cache means no request at all, which is what lets the app open offline with content
     /// instead of a spinner (research.md §5.1).
-    func refreshIfStale(ttl: Duration, now: Date = .now) async -> PageOutcome {
+    func refreshIfStale(ttl: Duration, now: Date = .now) async -> LoadOutcome {
         guard let cursor = await store.pageCursor() else {
             return await refresh(now: now) // Nothing cached yet.
         }
@@ -36,7 +36,7 @@ actor CatalogPaginator {
     }
 
     /// Replaces the catalogue with a fresh first page.
-    func refresh(now: Date = .now) async -> PageOutcome {
+    func refresh(now: Date = .now) async -> LoadOutcome {
         guard !isLoading else { return .noop }
         isLoading = true
         defer { isLoading = false }
@@ -48,13 +48,13 @@ actor CatalogPaginator {
             try await store.replaceFirstPage(page.products, total: page.total, now: now)
             return .loaded
         } catch {
-            return PageOutcome(error)
+            return LoadOutcome(error)
         }
     }
 
     /// Loads the page after the cursor. A no-op at the end of the catalogue, and while another load
     /// is in flight.
-    func loadNextPage(now: Date = .now) async -> PageOutcome {
+    func loadNextPage(now: Date = .now) async -> LoadOutcome {
         guard !isLoading else { return .noop }
         guard let cursor = await store.pageCursor() else { return await refresh(now: now) }
         guard cursor.hasMore else { return .noop }
@@ -73,22 +73,7 @@ actor CatalogPaginator {
             )
             return .loaded
         } catch {
-            return PageOutcome(error)
-        }
-    }
-}
-
-// `nonisolated` again: an extension does not inherit it from the type, and with default MainActor
-// isolation these helpers would be unreachable from the actor (ADR §29).
-nonisolated private extension PageOutcome {
-    /// Cancellation is not a failure and never becomes one.
-    init(_ error: any Error) {
-        if error is CancellationError || (error as? URLError)?.code == .cancelled {
-            self = .cancelled
-        } else if let appError = error as? AppError {
-            self = .failed(appError)
-        } else {
-            self = .failed((try? AppError.mapping(error)) ?? .unknown)
+            return LoadOutcome(error)
         }
     }
 }

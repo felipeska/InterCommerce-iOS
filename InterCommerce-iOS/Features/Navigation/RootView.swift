@@ -11,15 +11,18 @@ import SwiftUI
 struct RootView: View {
     @Environment(\.dependencies) private var dependencies
     @State private var path = NavigationPath()
+    /// Shared by the card and the detail so the zoom transition can match them. It lives here
+    /// because the source and the destination are declared in different views.
+    @Namespace private var productTransition
 
     var body: some View {
         NavigationStack(path: $path) {
-            CatalogScreen(dependencies: dependencies)
+            CatalogScreen(dependencies: dependencies, transitionNamespace: productTransition)
                 .navigationDestination(for: Destination.self) { destination in
                     switch destination {
                     case .productDetail(let id):
-                        // Phase 4.
-                        Text("Product \(id)")
+                        ProductDetailScreen(productId: id, dependencies: dependencies)
+                            .navigationTransition(.zoom(sourceID: id, in: productTransition))
                     case .cart:
                         // Phase 5.
                         Text("Cart")

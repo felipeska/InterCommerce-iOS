@@ -175,6 +175,27 @@ struct CatalogStoreTests {
         #expect(products[1].title == "Renamed 2")
     }
 
+    /// The race the actor exists to close (ADR §26): a page replace and a row refresh landing at the
+    /// same time must not leave the grid reordered or a position duplicated.
+    @Test("A page refresh and a row refresh at the same time keep positions intact")
+    func concurrentWritersKeepPositions() async throws {
+        let store = try makeStore()
+        try await store.replaceFirstPage(makeDTOs(ids: [1, 2, 3]), total: 3)
+
+        async let rowRefresh: Void = store.updateProduct(from: makeDTOs(ids: [2], titlePrefix: "Renamed")[0])
+        async let pageRefresh: Void = store.replaceFirstPage(makeDTOs(ids: [1, 2, 3]), total: 3)
+        _ = try await (rowRefresh, pageRefresh)
+
+        let products = await store.currentProducts()
+        #expect(products.count == 3)
+        #expect(products.map(\.id) == [1, 2, 3], "The grid order survived neither writer")
+
+        // The invariant that matters: positions are exactly 0..<n, with no duplicates. A row written
+        // against a generation of the table that no longer exists shows up here.
+        let positions = await store.debugPositions()
+        #expect(positions == [0, 1, 2], "Positions ended up as \(positions)")
+    }
+
     @Test("A row refresh that changes nothing does not write")
     func rowRefreshSkipsWhenUnchanged() async throws {
         let store = try makeStore()

@@ -19,6 +19,11 @@ struct CatalogContentView: View {
     let appendPhase: CatalogModel.LoadPhase
     let onRetry: () -> Void
     let onReachEnd: () -> Void
+    /// Supplied by `RootView`, so the card and the detail share one namespace. Optional because the
+    /// previews below have no navigation stack to zoom into.
+    var transitionNamespace: Namespace.ID?
+
+    @Namespace private var fallbackNamespace
 
     var body: some View {
         ScrollView {
@@ -33,6 +38,10 @@ struct CatalogContentView: View {
                             ProductCard(product: product)
                         }
                         .buttonStyle(.plain)
+                        // The zoom transition: the card is the source the detail grows out of. If
+                        // the ids ever stopped matching, the system falls back to a plain push —
+                        // a benign failure mode (design.md §8).
+                        .matchedTransitionSource(id: product.id, in: transitionNamespace ?? fallbackNamespace)
                     }
                 }
                 .padding(Spacing.l)

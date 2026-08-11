@@ -99,7 +99,7 @@ struct CatalogModelTests {
     func appendFailureIsIsolated() async {
         let repository = FakeProductRepository(
             products: Product.previewList,
-            nextPageOutcome: .failed(.timeout)
+            nextLoadOutcome: .failed(.timeout)
         )
         let model = makeModel(repository: repository)
         await model.start()
@@ -113,7 +113,7 @@ struct CatalogModelTests {
 
     @Test("A no-op page load is not a failure")
     func noopIsNotAFailure() async {
-        let repository = FakeProductRepository(products: Product.previewList, nextPageOutcome: .noop)
+        let repository = FakeProductRepository(products: Product.previewList, nextLoadOutcome: .noop)
         let model = makeModel(repository: repository)
         await model.start()
 
@@ -227,8 +227,8 @@ struct CatalogModelTests {
 
 private actor FakeProductRepository: ProductRepository {
     private let products: [Product]
-    private let refreshOutcome: PageOutcome
-    private let nextPageOutcome: PageOutcome
+    private let refreshOutcome: LoadOutcome
+    private let nextLoadOutcome: LoadOutcome
     private let nextPageDelay: Duration?
     private let searchOutcome: SearchOutcome
     private let searchDelay: Duration?
@@ -237,15 +237,15 @@ private actor FakeProductRepository: ProductRepository {
 
     init(
         products: [Product],
-        refreshOutcome: PageOutcome = .loaded,
-        nextPageOutcome: PageOutcome = .loaded,
+        refreshOutcome: LoadOutcome = .loaded,
+        nextLoadOutcome: LoadOutcome = .loaded,
         nextPageDelay: Duration? = nil,
         searchOutcome: SearchOutcome = .results(SearchResults(products: [], source: .remote)),
         searchDelay: Duration? = nil
     ) {
         self.products = products
         self.refreshOutcome = refreshOutcome
-        self.nextPageOutcome = nextPageOutcome
+        self.nextLoadOutcome = nextLoadOutcome
         self.nextPageDelay = nextPageDelay
         self.searchOutcome = searchOutcome
         self.searchDelay = searchDelay
@@ -265,12 +265,18 @@ private actor FakeProductRepository: ProductRepository {
         return searchOutcome
     }
 
-    func refreshCatalogIfStale(ttl: Duration) async -> PageOutcome { refreshOutcome }
-    func refreshCatalog() async -> PageOutcome { refreshOutcome }
+    nonisolated func observeProduct(id: Int) -> AsyncStream<Product?> {
+        AsyncStream { $0.finish() }
+    }
 
-    func loadNextPage() async -> PageOutcome {
+    func refreshProduct(id: Int) async -> LoadOutcome { .noop }
+
+    func refreshCatalogIfStale(ttl: Duration) async -> LoadOutcome { refreshOutcome }
+    func refreshCatalog() async -> LoadOutcome { refreshOutcome }
+
+    func loadNextPage() async -> LoadOutcome {
         nextPageCallCount += 1
         if let nextPageDelay { try? await Task.sleep(for: nextPageDelay) }
-        return nextPageOutcome
+        return nextLoadOutcome
     }
 }

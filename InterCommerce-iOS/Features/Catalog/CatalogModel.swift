@@ -186,7 +186,7 @@ final class CatalogModel {
     /// skeletons for ever. A test caught it. Cancellation must put the screen back where it was,
     /// never invent a failure and never leave a spinner behind.
     private func apply(
-        _ outcome: PageOutcome,
+        _ outcome: LoadOutcome,
         to phase: ReferenceWritableKeyPath<CatalogModel, LoadPhase>,
         revertingTo previous: LoadPhase
     ) {

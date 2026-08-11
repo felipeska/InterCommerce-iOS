@@ -18,13 +18,20 @@ nonisolated protocol ProductRepository: Sendable {
     func observeCatalog() -> AsyncStream<[Product]>
 
     /// Refreshes only if the cache has aged past `ttl`.
-    func refreshCatalogIfStale(ttl: Duration) async -> PageOutcome
+    func refreshCatalogIfStale(ttl: Duration) async -> LoadOutcome
 
     /// Forces a refresh: pull-to-refresh, or the retry button.
-    func refreshCatalog() async -> PageOutcome
+    func refreshCatalog() async -> LoadOutcome
 
     /// Loads the page after the cursor.
-    func loadNextPage() async -> PageOutcome
+    func loadNextPage() async -> LoadOutcome
+
+    /// A single product, as it changes. Emits the cached copy immediately, so the detail screen has
+    /// content on its first frame even with no network.
+    func observeProduct(id: Int) -> AsyncStream<Product?>
+
+    /// Refreshes one product in the background. The second writer of `ProductEntity` (ADR §26).
+    func refreshProduct(id: Int) async -> LoadOutcome
 
     /// Searches the catalogue.
     ///
