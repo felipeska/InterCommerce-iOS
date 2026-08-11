@@ -1,5 +1,5 @@
 //
-//  ProductDetailModel.swift
+//  ProductDetailViewModel.swift
 //  Features · Catalog · Detail
 //
 //  Cache first, network second. The product shows instantly because it is already stored — the
@@ -10,7 +10,7 @@ import Foundation
 import Observation
 
 @Observable
-final class ProductDetailModel {
+final class ProductDetailViewModel {
 
     private(set) var product: Product?
     private(set) var isRefreshing = false

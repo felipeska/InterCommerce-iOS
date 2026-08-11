@@ -6,12 +6,12 @@
 import SwiftUI
 
 struct CartScreen: View {
-    @State private var model: CartModel
+    @State private var viewModel: CartViewModel
     private let taxPercentage: Double
     let onBrowse: () -> Void
 
     init(dependencies: AppDependencies, onBrowse: @escaping () -> Void) {
-        _model = State(initialValue: CartModel(
+        _viewModel = State(initialValue: CartViewModel(
             observeCart: dependencies.observeCart,
             updateQuantity: dependencies.updateQuantity,
             removeFromCart: dependencies.removeFromCart,
@@ -24,22 +24,22 @@ struct CartScreen: View {
 
     var body: some View {
         CartContentView(
-            lines: model.lines,
-            totals: model.totals,
+            lines: viewModel.lines,
+            totals: viewModel.totals,
             taxPercentage: taxPercentage,
             onQuantityChange: { line, quantity in
-                Task { await model.setQuantity(quantity, for: line) }
+                Task { await viewModel.setQuantity(quantity, for: line) }
             },
-            onRemove: { line in Task { await model.remove(line) } },
+            onRemove: { line in Task { await viewModel.remove(line) } },
             onBrowse: onBrowse
         )
-        .task { await model.start() }
+        .task { await viewModel.start() }
         .toolbar {
             // Undo for a stray swipe. Losing a cart line to an accidental gesture is precisely the
             // data loss this brief is about, and the fix costs one button.
-            if model.lastRemoved != nil {
+            if viewModel.lastRemoved != nil {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Undo") { Task { await model.undoRemove() } }
+                    Button("Undo") { Task { await viewModel.undoRemove() } }
                 }
             }
         }

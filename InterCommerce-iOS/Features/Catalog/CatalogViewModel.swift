@@ -1,5 +1,5 @@
 //
-//  CatalogModel.swift
+//  CatalogViewModel.swift
 //  Features · Catalog
 //
 //  Screen state. It orchestrates refresh and paging, and it *observes* the catalogue — it never
@@ -14,7 +14,7 @@ import Foundation
 import Observation
 
 @Observable
-final class CatalogModel {
+final class CatalogViewModel {
 
     /// Where a load stands. Deliberately separate for refresh and append: a failed "load more" must
     /// not blank a screen that is already showing products.
@@ -187,7 +187,7 @@ final class CatalogModel {
     /// never invent a failure and never leave a spinner behind.
     private func apply(
         _ outcome: LoadOutcome,
-        to phase: ReferenceWritableKeyPath<CatalogModel, LoadPhase>,
+        to phase: ReferenceWritableKeyPath<CatalogViewModel, LoadPhase>,
         revertingTo previous: LoadPhase
     ) {
         switch outcome {

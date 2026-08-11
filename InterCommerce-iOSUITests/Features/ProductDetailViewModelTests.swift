@@ -1,5 +1,5 @@
 //
-//  ProductDetailModelTests.swift
+//  ProductDetailViewModelTests.swift
 //  Features tests
 //
 //  The detail is cache-first: it must show a stored product with no network at all, and a failed
@@ -12,10 +12,10 @@ import Testing
 @testable import InterCommerce_iOS
 
 @MainActor
-struct ProductDetailModelTests {
+struct ProductDetailViewModelTests {
 
-    private func makeModel(id: Int = 1, repository: FakeDetailRepository) -> ProductDetailModel {
-        ProductDetailModel(
+    private func makeViewModel(id: Int = 1, repository: FakeDetailRepository) -> ProductDetailViewModel {
+        ProductDetailViewModel(
             productId: id,
             observeProduct: ObserveProduct(repository: repository),
             refreshProduct: RefreshProduct(repository: repository),
@@ -26,58 +26,58 @@ struct ProductDetailModelTests {
 
     @Test("A cached product shows even when the refresh fails")
     func showsCachedProductOffline() async {
-        let model = makeModel(repository: FakeDetailRepository(
+        let viewModel = makeViewModel(repository: FakeDetailRepository(
             product: .preview,
             refreshOutcome: .failed(.noConnection)
         ))
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.product?.id == 1)
-        #expect(model.failure == nil, "A failed background refresh covered a readable screen")
+        #expect(viewModel.product?.id == 1)
+        #expect(viewModel.failure == nil, "A failed background refresh covered a readable screen")
     }
 
     @Test("With nothing cached and no network, the error surfaces")
     func failsWhenNothingCached() async {
-        let model = makeModel(repository: FakeDetailRepository(
+        let viewModel = makeViewModel(repository: FakeDetailRepository(
             product: nil,
             refreshOutcome: .failed(.noConnection)
         ))
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.product == nil)
-        #expect(model.failure == .noConnection)
+        #expect(viewModel.product == nil)
+        #expect(viewModel.failure == .noConnection)
     }
 
     @Test("A successful refresh reaches the screen through the stream")
     func refreshUpdatesTheScreen() async {
         let repository = FakeDetailRepository(product: .preview, refreshOutcome: .loaded)
-        let model = makeModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.product?.title == "Essence Mascara Lash Princess")
+        #expect(viewModel.product?.title == "Essence Mascara Lash Princess")
         #expect(await repository.refreshCallCount == 1)
     }
 
     /// Cancellation is not a failure: leaving the screen must not paint an error on the way out.
     @Test("A cancelled refresh reports nothing")
     func cancelledRefreshIsSilent() async {
-        let model = makeModel(repository: FakeDetailRepository(product: nil, refreshOutcome: .cancelled))
+        let viewModel = makeViewModel(repository: FakeDetailRepository(product: nil, refreshOutcome: .cancelled))
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.failure == nil)
+        #expect(viewModel.failure == nil)
     }
 
     @Test("Retrying after a failure asks again")
     func retryAsksAgain() async {
         let repository = FakeDetailRepository(product: nil, refreshOutcome: .failed(.timeout))
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.refresh()
+        await viewModel.refresh()
 
         #expect(await repository.refreshCallCount == 2)
     }

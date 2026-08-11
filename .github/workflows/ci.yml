@@ -54,7 +54,7 @@ jobs:
 
       - name: G6 · DesignSystem knows nothing of features
         run: |
-          ! grep -rn --include='*.swift' -E "(CatalogModel|CartModel|ProductDetailModel|Screen\b)" "$SOURCES/DesignSystem"
+          ! grep -rn --include='*.swift' -E "(CatalogViewModel|CartViewModel|ProductDetailViewModel|Screen\b)" "$SOURCES/DesignSystem"
 
       - name: G7 · Domain tests import neither UI nor persistence
         run: |

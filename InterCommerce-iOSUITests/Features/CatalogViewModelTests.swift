@@ -1,5 +1,5 @@
 //
-//  CatalogModelTests.swift
+//  CatalogViewModelTests.swift
 //  Features tests
 //
 //  Fakes are plain structs — there is no mocking library and none is needed. The model takes three
@@ -12,10 +12,10 @@ import Testing
 @testable import InterCommerce_iOS
 
 @MainActor
-struct CatalogModelTests {
+struct CatalogViewModelTests {
 
-    private func makeModel(repository: FakeProductRepository) -> CatalogModel {
-        CatalogModel(
+    private func makeViewModel(repository: FakeProductRepository) -> CatalogViewModel {
+        CatalogViewModel(
             observeCatalog: ObserveCatalog(repository: repository),
             refreshCatalog: RefreshCatalog(repository: repository),
             loadNextPage: LoadNextPage(repository: repository),
@@ -28,23 +28,23 @@ struct CatalogModelTests {
     @Test("Products arrive through the stream, never from the refresh call")
     func observesProducts() async {
         let repository = FakeProductRepository(products: Product.previewList)
-        let model = makeModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.products.count == 3)
-        #expect(model.refresh == .idle)
+        #expect(viewModel.products.count == 3)
+        #expect(viewModel.refresh == .idle)
     }
 
     @Test("Skeletons show only while loading with nothing cached")
     func showsSkeletonsWhenEmpty() async {
         let repository = FakeProductRepository(products: [], refreshOutcome: .loaded)
-        let model = makeModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
-        #expect(model.showsSkeletons == false, "Nothing has been asked for yet")
+        #expect(viewModel.showsSkeletons == false, "Nothing has been asked for yet")
 
-        await model.start()
-        #expect(model.showsSkeletons == false, "The load finished")
+        await viewModel.start()
+        #expect(viewModel.showsSkeletons == false, "The load finished")
     }
 
     // MARK: - The offline rule
@@ -57,24 +57,24 @@ struct CatalogModelTests {
             products: Product.previewList,
             refreshOutcome: .failed(.noConnection)
         )
-        let model = makeModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.products.count == 3, "Products were dropped on a failed refresh")
-        #expect(model.isOffline)
-        #expect(model.failure == nil, "An error screen would have covered readable content")
+        #expect(viewModel.products.count == 3, "Products were dropped on a failed refresh")
+        #expect(viewModel.isOffline)
+        #expect(viewModel.failure == nil, "An error screen would have covered readable content")
     }
 
     @Test("A failed refresh with nothing cached shows the error screen")
     func failureWithoutContentIsAnError() async {
         let repository = FakeProductRepository(products: [], refreshOutcome: .failed(.noConnection))
-        let model = makeModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.failure == .noConnection)
-        #expect(model.isOffline == false)
+        #expect(viewModel.failure == .noConnection)
+        #expect(viewModel.isOffline == false)
     }
 
     // MARK: - Cancellation
@@ -84,13 +84,13 @@ struct CatalogModelTests {
     @Test("Cancellation leaves the phase untouched")
     func cancellationDoesNotChangeState() async {
         let repository = FakeProductRepository(products: Product.previewList, refreshOutcome: .cancelled)
-        let model = makeModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.refresh == .idle)
-        #expect(model.failure == nil)
-        #expect(model.isOffline == false)
+        #expect(viewModel.refresh == .idle)
+        #expect(viewModel.failure == nil)
+        #expect(viewModel.isOffline == false)
     }
 
     // MARK: - Paging
@@ -101,35 +101,35 @@ struct CatalogModelTests {
             products: Product.previewList,
             nextLoadOutcome: .failed(.timeout)
         )
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.loadMore()
+        await viewModel.loadMore()
 
-        #expect(model.append == .failed(.timeout))
-        #expect(model.products.count == 3, "A failed page load dropped the products")
-        #expect(model.failure == nil, "A failed page load took over the whole screen")
+        #expect(viewModel.append == .failed(.timeout))
+        #expect(viewModel.products.count == 3, "A failed page load dropped the products")
+        #expect(viewModel.failure == nil, "A failed page load took over the whole screen")
     }
 
     @Test("A no-op page load is not a failure")
     func noopIsNotAFailure() async {
         let repository = FakeProductRepository(products: Product.previewList, nextLoadOutcome: .noop)
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.loadMore()
+        await viewModel.loadMore()
 
-        #expect(model.append == .idle)
+        #expect(viewModel.append == .idle)
     }
 
     @Test("The sentinel cannot start two page loads at once")
     func loadMoreIsGuarded() async {
         let repository = FakeProductRepository(products: Product.previewList, nextPageDelay: .milliseconds(200))
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        async let first: Void = model.loadMore()
-        async let second: Void = model.loadMore()
+        async let first: Void = viewModel.loadMore()
+        async let second: Void = viewModel.loadMore()
         _ = await (first, second)
 
         #expect(await repository.nextPageCallCount == 1, "The grid asked for the same page twice")
@@ -140,13 +140,13 @@ struct CatalogModelTests {
     @Test("A query shorter than two characters leaves the catalogue alone", arguments: ["", "a", " x "])
     func shortQueriesDoNotSearch(query: String) async {
         let repository = FakeProductRepository(products: Product.previewList)
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.runSearch(query, debounce: .zero)
+        await viewModel.runSearch(query, debounce: .zero)
 
-        #expect(model.search == .inactive)
-        #expect(model.visibleProducts.count == 3, "The catalogue should still be on screen")
+        #expect(viewModel.search == .inactive)
+        #expect(viewModel.visibleProducts.count == 3, "The catalogue should still be on screen")
         #expect(await repository.searchCallCount == 0, "It searched for something too short to mean anything")
     }
 
@@ -156,14 +156,14 @@ struct CatalogModelTests {
             products: Product.previewList,
             searchOutcome: .results(SearchResults(products: [Product.preview], source: .remote))
         )
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.runSearch("mascara", debounce: .zero)
+        await viewModel.runSearch("mascara", debounce: .zero)
 
-        #expect(model.visibleProducts.map(\.id) == [1])
-        #expect(model.showsOfflineBanner == false)
-        #expect(model.products.count == 3, "The cached catalogue was overwritten by a search")
+        #expect(viewModel.visibleProducts.map(\.id) == [1])
+        #expect(viewModel.showsOfflineBanner == false)
+        #expect(viewModel.products.count == 3, "The cached catalogue was overwritten by a search")
     }
 
     /// The degradation the brief asks for: a failed request is answered from the cache, and the
@@ -174,13 +174,13 @@ struct CatalogModelTests {
             products: Product.previewList,
             searchOutcome: .results(SearchResults(products: [Product.preview], source: .local(reason: .noConnection)))
         )
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.runSearch("mascara", debounce: .zero)
+        await viewModel.runSearch("mascara", debounce: .zero)
 
-        #expect(model.visibleProducts.map(\.id) == [1])
-        #expect(model.showsOfflineBanner, "A cached answer was presented as if it were fresh")
+        #expect(viewModel.visibleProducts.map(\.id) == [1])
+        #expect(viewModel.showsOfflineBanner, "A cached answer was presented as if it were fresh")
     }
 
     @Test("No matches offline says so, rather than claiming the product does not exist")
@@ -189,21 +189,21 @@ struct CatalogModelTests {
             products: Product.previewList,
             searchOutcome: .results(SearchResults(products: [], source: .local(reason: .noConnection)))
         )
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.runSearch("nothing", debounce: .zero)
+        await viewModel.runSearch("nothing", debounce: .zero)
 
-        #expect(model.search == .empty(isLocal: true))
+        #expect(viewModel.search == .empty(isLocal: true))
     }
 
     /// The debounce: a query the user typed past never reaches the network.
     @Test("Typing over a query cancels it before it is sent")
     func debounceDropsSupersededQueries() async throws {
         let repository = FakeProductRepository(products: Product.previewList)
-        let model = makeModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
-        let typing = Task { await model.runSearch("pho", debounce: .milliseconds(300)) }
+        let typing = Task { await viewModel.runSearch("pho", debounce: .milliseconds(300)) }
         try await Task.sleep(for: .milliseconds(50))
         typing.cancel()
         _ = await typing.value
@@ -214,12 +214,12 @@ struct CatalogModelTests {
     @Test("A cancelled search leaves the previous results on screen")
     func cancelledSearchKeepsResults() async {
         let repository = FakeProductRepository(products: Product.previewList, searchOutcome: .cancelled)
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.runSearch("phone", debounce: .zero)
+        await viewModel.runSearch("phone", debounce: .zero)
 
-        #expect(model.search == .searching, "A superseded search should not blank the screen")
+        #expect(viewModel.search == .searching, "A superseded search should not blank the screen")
     }
 }
 

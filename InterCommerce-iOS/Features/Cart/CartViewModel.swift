@@ -1,5 +1,5 @@
 //
-//  CartModel.swift
+//  CartViewModel.swift
 //  Features · Cart
 //
 //  Local, reactive, and never in an error state: nothing here touches the network (research.md §4).
@@ -9,7 +9,7 @@ import Foundation
 import Observation
 
 @Observable
-final class CartModel {
+final class CartViewModel {
 
     private(set) var lines: [CartLine] = []
     private(set) var totals: CartTotals = .empty

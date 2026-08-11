@@ -2,7 +2,7 @@
 //  ProductDetailScreen.swift
 //  Features · Catalog · Detail
 //
-//  Owns the model. Receives the id, never the product: the screen re-reads it from the store, which
+//  Owns the viewModel. Receives the id, never the product: the screen re-reads it from the store, which
 //  is what keeps a single source of truth and lets the row refresh reach the screen on its own
 //  (architecture.md §7).
 //
@@ -10,10 +10,10 @@
 import SwiftUI
 
 struct ProductDetailScreen: View {
-    @State private var model: ProductDetailModel
+    @State private var viewModel: ProductDetailViewModel
 
     init(productId: Int, dependencies: AppDependencies) {
-        _model = State(initialValue: ProductDetailModel(
+        _viewModel = State(initialValue: ProductDetailViewModel(
             productId: productId,
             observeProduct: dependencies.observeProduct,
             refreshProduct: dependencies.refreshProduct,
@@ -24,22 +24,22 @@ struct ProductDetailScreen: View {
 
     var body: some View {
         Group {
-            if let product = model.product {
+            if let product = viewModel.product {
                 ProductDetailContentView(
                     product: product,
-                    quantityInCart: model.quantityInCart,
-                    onAddToCart: { Task { await model.addProductToCart() } }
+                    quantityInCart: viewModel.quantityInCart,
+                    onAddToCart: { Task { await viewModel.addProductToCart() } }
                 )
-            } else if let failure = model.failure {
+            } else if let failure = viewModel.failure {
                 // Only reachable with nothing cached: the product was never paged in and the network
                 // is unavailable.
                 AppErrorView(message: failure.message, systemImage: failure.symbol) {
-                    Task { await model.refresh() }
+                    Task { await viewModel.refresh() }
                 }
             } else {
                 ProgressView()
             }
         }
-        .task { await model.start() }
+        .task { await viewModel.start() }
     }
 }

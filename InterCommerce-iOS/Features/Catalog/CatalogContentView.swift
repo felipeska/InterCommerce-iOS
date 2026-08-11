@@ -11,12 +11,12 @@ import SwiftUI
 struct CatalogContentView: View {
     let products: [Product]
     var isSearching: Bool = false
-    var searchPhase: CatalogModel.SearchPhase = .inactive
+    var searchPhase: CatalogViewModel.SearchPhase = .inactive
     let showsSkeletons: Bool
     let isOffline: Bool
     let failure: AppError?
     let showsEmptyState: Bool
-    let appendPhase: CatalogModel.LoadPhase
+    let appendPhase: CatalogViewModel.LoadPhase
     let onRetry: () -> Void
     let onReachEnd: () -> Void
     /// Supplied by `RootView`, so the card and the detail share one namespace. Optional because the

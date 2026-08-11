@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct CatalogScreen: View {
-    @State private var model: CatalogModel
+    @State private var viewModel: CatalogViewModel
     @Environment(\.scenePhase) private var scenePhase
 
     private let transitionNamespace: Namespace.ID
@@ -18,7 +18,7 @@ struct CatalogScreen: View {
     init(dependencies: AppDependencies, transitionNamespace: Namespace.ID) {
         self.transitionNamespace = transitionNamespace
         self.dependencies = dependencies
-        _model = State(initialValue: CatalogModel(
+        _viewModel = State(initialValue: CatalogViewModel(
             observeCatalog: dependencies.observeCatalog,
             refreshCatalog: dependencies.refreshCatalog,
             loadNextPage: dependencies.loadNextPage,
@@ -28,16 +28,16 @@ struct CatalogScreen: View {
 
     var body: some View {
         CatalogContentView(
-            products: model.visibleProducts,
-            isSearching: model.isSearching,
-            searchPhase: model.search,
-            showsSkeletons: model.showsSkeletons,
-            isOffline: model.showsOfflineBanner,
-            failure: model.failure,
-            showsEmptyState: model.showsEmptyState,
-            appendPhase: model.append,
-            onRetry: { Task { await model.refreshNow() } },
-            onReachEnd: { Task { await model.loadMore() } },
+            products: viewModel.visibleProducts,
+            isSearching: viewModel.isSearching,
+            searchPhase: viewModel.search,
+            showsSkeletons: viewModel.showsSkeletons,
+            isOffline: viewModel.showsOfflineBanner,
+            failure: viewModel.failure,
+            showsEmptyState: viewModel.showsEmptyState,
+            appendPhase: viewModel.append,
+            onRetry: { Task { await viewModel.refreshNow() } },
+            onReachEnd: { Task { await viewModel.loadMore() } },
             transitionNamespace: transitionNamespace
         )
         .navigationTitle("InterCommerce")
@@ -48,21 +48,21 @@ struct CatalogScreen: View {
                 }
             }
         }
-        .searchable(text: $model.query, prompt: "Search products")
+        .searchable(text: $viewModel.query, prompt: "Search products")
         // With a full grid the system collapses search into a toolbar button and gives the height
         // back to the content (design.md §1 bis).
         .searchToolbarBehavior(.minimize)
         // `.task(id:)` is the debounce *and* the cancellation of the stale query: changing the id
         // tears the previous run down before the next one starts.
-        .task(id: model.query) { await model.runSearch(model.query) }
-        .refreshable { await model.refreshNow() }
+        .task(id: viewModel.query) { await viewModel.runSearch(viewModel.query) }
+        .refreshable { await viewModel.refreshNow() }
         // `.task` and not `onAppear`: leaving the screen cancels the stream and any in-flight page.
-        .task { await model.start() }
+        .task { await viewModel.start() }
         .onChange(of: scenePhase) { _, phase in
             // Coming back from the background re-checks the TTL. `start()` does not run again while
             // the process is alive, so without this the catalogue could stay stale for a session.
             guard phase == .active else { return }
-            Task { await model.refreshIfStaleOnResume() }
+            Task { await viewModel.refreshIfStaleOnResume() }
         }
     }
 }

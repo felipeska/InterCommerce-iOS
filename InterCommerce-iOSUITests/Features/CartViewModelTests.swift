@@ -1,5 +1,5 @@
 //
-//  CartModelTests.swift
+//  CartViewModelTests.swift
 //  Features tests
 //
 
@@ -9,13 +9,13 @@ import Testing
 @testable import InterCommerce_iOS
 
 @MainActor
-struct CartModelTests {
+struct CartViewModelTests {
 
-    private func makeModel(
+    private func makeViewModel(
         repository: FakeCartRepository,
         taxPolicy: TaxPolicy = .none
-    ) -> CartModel {
-        CartModel(
+    ) -> CartViewModel {
+        CartViewModel(
             observeCart: ObserveCart(repository: repository),
             updateQuantity: UpdateQuantity(repository: repository),
             removeFromCart: RemoveFromCart(repository: repository),
@@ -26,23 +26,23 @@ struct CartModelTests {
 
     @Test("Totals are computed from the lines, not accumulated")
     func totalsFollowTheLines() async {
-        let model = makeModel(repository: FakeCartRepository(lines: CartLine.previewList))
+        let viewModel = makeViewModel(repository: FakeCartRepository(lines: CartLine.previewList))
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.lines.count == 2)
-        #expect(model.totals.itemCount == 4)
-        #expect(model.totals.subtotal == Cents(2_683 + 1_489))
+        #expect(viewModel.lines.count == 2)
+        #expect(viewModel.totals.itemCount == 4)
+        #expect(viewModel.totals.subtotal == Cents(2_683 + 1_489))
     }
 
     @Test("An empty cart totals zero")
     func emptyCart() async {
-        let model = makeModel(repository: FakeCartRepository(lines: []))
+        let viewModel = makeViewModel(repository: FakeCartRepository(lines: []))
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.isEmpty)
-        #expect(model.totals == .empty)
+        #expect(viewModel.isEmpty)
+        #expect(viewModel.totals == .empty)
     }
 
     /// Dropping below one removes the line: it is what the stepper's minus means at a quantity of 1,
@@ -50,43 +50,43 @@ struct CartModelTests {
     @Test("Decrementing past one removes the line")
     func decrementingPastOneRemoves() async {
         let repository = FakeCartRepository(lines: CartLine.previewList)
-        let model = makeModel(repository: repository)
-        await model.start()
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
 
-        await model.setQuantity(0, for: CartLine.previewList[1])
+        await viewModel.setQuantity(0, for: CartLine.previewList[1])
 
         #expect(await repository.removed == [3])
-        #expect(model.lastRemoved?.productId == 3, "Nothing was offered to undo")
+        #expect(viewModel.lastRemoved?.productId == 3, "Nothing was offered to undo")
     }
 
     @Test("Removing offers an undo, and undoing puts the line back with its quantity")
     func undoRestoresTheLine() async {
         let repository = FakeCartRepository(lines: CartLine.previewList)
-        let model = makeModel(repository: repository)
-        await model.start()
-        await model.remove(CartLine.previewList[0])
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
+        await viewModel.remove(CartLine.previewList[0])
 
-        await model.undoRemove()
+        await viewModel.undoRemove()
 
         let restored = await repository.added
         #expect(restored.count == 1)
         #expect(restored.first?.0 == 1)
         #expect(restored.first?.1 == 3, "The quantity was not restored")
-        #expect(model.lastRemoved == nil)
+        #expect(viewModel.lastRemoved == nil)
     }
 
     @Test("Tax reaches the totals through the injected policy")
     func taxIsInjected() async {
-        let model = makeModel(
+        let viewModel = makeViewModel(
             repository: FakeCartRepository(lines: [CartLine.previewList[1]]),
             taxPolicy: TaxPolicy(basisPoints: 1_900)
         )
 
-        await model.start()
+        await viewModel.start()
 
-        #expect(model.totals.subtotal == Cents(1_489))
-        #expect(model.totals.tax == Cents(283)) // 1 489 · 19 % = 282.91 -> 283
-        #expect(model.totals.total == Cents(1_772))
+        #expect(viewModel.totals.subtotal == Cents(1_489))
+        #expect(viewModel.totals.tax == Cents(283)) // 1 489 · 19 % = 282.91 -> 283
+        #expect(viewModel.totals.total == Cents(1_772))
     }
 }
 
