@@ -19,6 +19,10 @@ final class CatalogViewModel {
     /// Where a load stands. Deliberately separate for refresh and append: a failed "load more" must
     /// not blank a screen that is already showing products.
     enum LoadPhase: Equatable {
+        /// Nothing has been asked for yet. Distinct from `.idle` on purpose: an empty catalogue that
+        /// has never been loaded is not "no products", and treating the two alike is what makes the
+        /// empty state flash on screen for the frame before the first load starts.
+        case initial
         case idle
         case loading
         case failed(AppError)
@@ -30,7 +34,7 @@ final class CatalogViewModel {
     }
 
     private(set) var products: [Product] = []
-    private(set) var refresh: LoadPhase = .idle
+    private(set) var refresh: LoadPhase = .initial
     private(set) var append: LoadPhase = .idle
 
     /// Bound to `.searchable`. The view owns the text; the model owns what it means.
@@ -88,7 +92,7 @@ final class CatalogViewModel {
     /// The banner covers both stories: a stale catalogue and a search answered from the cache.
     var showsOfflineBanner: Bool { isOffline || search.isLocal }
 
-    var showsSkeletons: Bool { products.isEmpty && refresh == .loading }
+    var showsSkeletons: Bool { products.isEmpty && (refresh == .loading || refresh == .initial) }
     var isOffline: Bool { !products.isEmpty && refresh.error != nil }
     var failure: AppError? { products.isEmpty ? refresh.error : nil }
     var showsEmptyState: Bool { products.isEmpty && refresh == .idle }

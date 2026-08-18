@@ -14,6 +14,7 @@ struct ProductDetailContentView: View {
     let onAddToCart: () -> Void
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// Incremented on every add. It is what drives both the haptic and the confirmation, so the two
     /// cannot fall out of step.
     @State private var addCount = 0
@@ -57,6 +58,11 @@ struct ProductDetailContentView: View {
         } label: {
             Label(buttonTitle, systemImage: showsConfirmation ? "checkmark" : "cart.badge.plus")
                 .font(.gabarito(.headline, weight: .semibold))
+                // Two lines, and no more. Left unbounded, "Add another (1 in cart)" wraps to four
+                // lines at accessibility sizes and the capsule grows into an oval that covers the
+                // product it belongs to.
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: Layout.minimumTouchTarget)
                 // The visual confirmation is the primary signal; the haptic only reinforces it.
                 // Someone with haptics off must still see that something happened.
@@ -71,8 +77,11 @@ struct ProductDetailContentView: View {
     private var buttonTitle: LocalizedStringKey {
         if showsConfirmation { return "Added" }
         if product.isOutOfStock { return "Out of stock" }
-        // Saying what is already there beats a silent second add.
-        return quantityInCart > 0 ? "Add another (\(quantityInCart) in cart)" : "Add to cart"
+        // Saying what is already there beats a silent second add — but at accessibility sizes the
+        // parenthetical is what makes the label unreadable, and the cart badge carries the same
+        // information anyway.
+        guard quantityInCart > 0 else { return "Add to cart" }
+        return typeSize.isAccessibilitySize ? "Add another" : "Add another (\(quantityInCart) in cart)"
     }
 
     private var gallery: some View {

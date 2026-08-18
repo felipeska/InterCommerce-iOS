@@ -41,7 +41,17 @@ extension Font {
             ],
         ])
 
-        let base = UIFont(descriptor: descriptor, size: UIFont.preferredFont(forTextStyle: textStyle).pointSize)
+        // The size at the DEFAULT content size category, not the current one. `preferredFont` alone
+        // already returns a size scaled for the user's setting, and `scaledFont` then scales it a
+        // second time — at accessibility3 that compounds into text roughly twice the intended size,
+        // which is what tore the catalogue and the detail CTA apart. Taking the unscaled baseline
+        // here means Dynamic Type is applied exactly once.
+        let baseSize = UIFont.preferredFont(
+            forTextStyle: textStyle,
+            compatibleWith: UITraitCollection(preferredContentSizeCategory: .large)
+        ).pointSize
+        let base = UIFont(descriptor: descriptor, size: baseSize)
+
         // Scaled, not fixed: without this the custom font would ignore Dynamic Type, which is the
         // most common way a bundled typeface breaks accessibility.
         return Font(UIFontMetrics(forTextStyle: textStyle).scaledFont(for: base))

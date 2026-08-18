@@ -41,10 +41,32 @@ struct CatalogViewModelTests {
         let repository = FakeProductRepository(products: [], refreshOutcome: .loaded)
         let viewModel = makeViewModel(repository: repository)
 
-        #expect(viewModel.showsSkeletons == false, "Nothing has been asked for yet")
+        #expect(viewModel.showsSkeletons, "Nothing has been asked for yet, so the screen is loading")
 
         await viewModel.start()
         #expect(viewModel.showsSkeletons == false, "The load finished")
+    }
+
+    /// The classic flash: an empty catalogue and a request in flight is *loading*, not "no results".
+    /// Showing the empty state there makes it blink on screen for the length of the request, and it
+    /// is invisible in a fast simulator over a fast network — which is why it is pinned here rather
+    /// than left to the eye.
+    @Test("The empty state never appears while a load is in flight")
+    func emptyStateDoesNotFlashDuringLoad() async {
+        let repository = FakeProductRepository(products: [], refreshOutcome: .loaded)
+        let viewModel = makeViewModel(repository: repository)
+
+        // The frame before the first load starts: empty, but nothing has been asked for yet, so the
+        // screen is loading — not reporting that the catalogue has no products.
+        #expect(viewModel.showsEmptyState == false)
+        #expect(viewModel.showsSkeletons)
+
+        await viewModel.start()
+
+        // Empty *and* settled: this is the only state that earns the empty view.
+        #expect(viewModel.refresh == .idle)
+        #expect(viewModel.showsEmptyState)
+        #expect(viewModel.showsSkeletons == false, "Skeletons and the empty state are exclusive")
     }
 
     // MARK: - The offline rule
@@ -88,7 +110,9 @@ struct CatalogViewModelTests {
 
         await viewModel.start()
 
-        #expect(viewModel.refresh == .idle)
+        // Back to exactly where it began: a cancelled load never completed, so the screen has still
+        // never loaded. Reporting `.idle` here would claim a finished load that never happened.
+        #expect(viewModel.refresh == .initial)
         #expect(viewModel.failure == nil)
         #expect(viewModel.isOffline == false)
     }

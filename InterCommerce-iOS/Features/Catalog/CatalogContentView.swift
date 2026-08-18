@@ -24,6 +24,7 @@ struct CatalogContentView: View {
     var transitionNamespace: Namespace.ID?
 
     @Namespace private var fallbackNamespace
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         ScrollView {
@@ -32,7 +33,7 @@ struct CatalogContentView: View {
                     .padding(Spacing.l)
                     .accessibilityLabel("Loading products")
             } else {
-                LazyVGrid(columns: CatalogGrid.columns, spacing: Spacing.m) {
+                LazyVGrid(columns: CatalogGrid.columns(for: typeSize), spacing: Spacing.m) {
                     ForEach(products) { product in
                         NavigationLink(value: Destination.productDetail(id: product.id)) {
                             ProductCard(product: product)
@@ -99,8 +100,9 @@ struct CatalogContentView: View {
                 Button("Try again", action: onReachEnd).buttonStyle(.glass)
             }
             .padding(Spacing.l)
-        case .idle:
-            // The sentinel: reaching it is what asks for the next page.
+        case .idle, .initial:
+            // The sentinel: reaching it is what asks for the next page. Appending has no separate
+            // "never started" state — the first page comes from the refresh, not from here.
             Color.clear
                 .frame(height: 1)
                 .onAppear(perform: onReachEnd)

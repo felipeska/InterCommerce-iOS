@@ -9,6 +9,8 @@ struct CartLineRow: View {
     let line: CartLine
     let onQuantityChange: (Int) -> Void
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.m) {
             CachedAsyncImage.product(url: line.thumbnailURL)
@@ -19,7 +21,9 @@ struct CartLineRow: View {
                 Text(line.title)
                     .font(.gabarito(.subheadline, weight: .medium))
                     .foregroundStyle(.textPrimary)
-                    .lineLimit(2)
+                    // Two lines keep the rows even; at accessibility sizes they hold three words,
+                    // so the row grows instead of hiding what the person is paying for.
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
 
                 Text(MoneyFormat.string(line.price.unitNet))
                     .font(.gabarito(.footnote))
