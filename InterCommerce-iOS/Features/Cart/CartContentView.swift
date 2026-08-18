@@ -22,8 +22,7 @@ struct CartContentView: View {
                     message: "Products you add will show up here.",
                     systemImage: "cart"
                 ) {
-                    Button("Browse the catalogue", action: onBrowse)
-                        .buttonStyle(.glassProminent)
+                    AppActionButton(title: "Browse the catalogue", action: onBrowse)
                 }
             } else {
                 List {

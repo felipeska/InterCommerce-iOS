@@ -68,14 +68,8 @@ struct OrderPlacedScreen: View {
                     .font(.gabarito(.body))
                     .foregroundStyle(.textSecondary)
 
-                Button(action: onBackToCatalog) {
-                    Text("Back to the catalogue")
-                        .font(.gabarito(.headline, weight: .semibold))
-                        .frame(maxWidth: .infinity, minHeight: Layout.minimumTouchTarget)
-                }
-                .buttonStyle(.glassProminent)
-                .tint(.brandPrimary)
-                .padding(.top, Spacing.s)
+                AppActionButton(title: "Back to the catalogue", fillsWidth: true, action: onBackToCatalog)
+                    .padding(.top, Spacing.s)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)

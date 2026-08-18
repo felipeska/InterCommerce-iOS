@@ -36,9 +36,9 @@ struct AppErrorView: View {
         } description: {
             Text(message)
         } actions: {
-            Button("Try again", action: retry)
-                .buttonStyle(.glassProminent)
+            AppActionButton(title: "Try again", action: retry)
         }
+
     }
 }
 
@@ -91,8 +91,7 @@ struct OfflineBanner: View {
         message: "Products you add will show up here.",
         systemImage: "cart"
     ) {
-        Button("Browse the catalogue") {}
-            .buttonStyle(.glassProminent)
+        AppActionButton(title: "Browse the catalogue") {}
     }
 }
 

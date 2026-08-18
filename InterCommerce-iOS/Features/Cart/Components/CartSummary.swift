@@ -43,16 +43,8 @@ struct CartSummary: View {
             // Enabled, and it goes somewhere. There is no payment to run and no order to look up
             // afterwards, so it leads to a stated outcome rather than to a form that would promise
             // something this app cannot deliver.
-            // The width goes on the LABEL, not on the button: a glass style draws its background
-            // around the label it is given, so a frame outside it leaves a button that hugs the word.
-            Button(action: onCheckout) {
-                Text("Checkout")
-                    .font(.gabarito(.headline, weight: .semibold))
-                    .frame(maxWidth: .infinity, minHeight: Layout.minimumTouchTarget)
-            }
-            .buttonStyle(.glassProminent)
-            .tint(.brandPrimary)
-            .padding(.top, Spacing.s)
+            AppActionButton(title: "Checkout", fillsWidth: true, action: onCheckout)
+                .padding(.top, Spacing.s)
         }
         .padding(Spacing.l)
         .background(Color.surfaceElevated)

@@ -80,7 +80,7 @@ struct CatalogContentView: View {
                     message: "There is nothing in the catalogue right now.",
                     systemImage: "shippingbox"
                 ) {
-                    Button("Reload", action: onRetry).buttonStyle(.glassProminent)
+                    AppActionButton(title: "Reload", action: onRetry)
                 }
             }
         }
@@ -97,7 +97,7 @@ struct CatalogContentView: View {
                 Text("Could not load more products")
                     .font(.gabarito(.footnote))
                     .foregroundStyle(.textSecondary)
-                Button("Try again", action: onReachEnd).buttonStyle(.glass)
+                AppActionButton(title: "Try again", style: .secondary, action: onReachEnd)
             }
             .padding(Spacing.l)
         case .idle, .initial:
