@@ -38,6 +38,7 @@ struct CalculateCartTotalsTests {
     func singleLineNoDiscount() {
         let totals = CalculateCartTotals()([line(cents: 999, quantity: 3)])
 
+        #expect(totals.gross == Cents(2_997))
         #expect(totals.subtotal == Cents(2_997))
         #expect(totals.discount == .zero)
         #expect(totals.total == Cents(2_997))
@@ -52,7 +53,8 @@ struct CalculateCartTotalsTests {
 
         #expect(totals.discount == Cents(314))
         #expect(totals.subtotal == Cents(2_683))
-        #expect(totals.subtotal + totals.discount == Cents(2_997), "The parts do not add back up to the gross")
+        #expect(totals.gross == Cents(2_997))
+        #expect(totals.subtotal + totals.discount == totals.gross, "The parts do not add back up to the gross")
     }
 
     @Test("Several lines add up, and the discounts add up with them")
@@ -65,7 +67,23 @@ struct CalculateCartTotalsTests {
 
         #expect(totals.discount == Cents(314 + 0 + 735))
         #expect(totals.subtotal == Cents(2_683 + 1_299 + 4_165))
+        #expect(totals.gross == Cents(2_997 + 1_299 + 4_900))
         #expect(totals.itemCount == 6)
+    }
+
+    /// The summary prints `gross`, then subtracts the discount row, then adds tax. If this invariant
+    /// ever broke, that breakdown would stop adding up on screen even with a correct total.
+    @Test("The gross sum is always the subtotal plus the discount")
+    func grossIsSubtotalPlusDiscount() {
+        let totals = CalculateCartTotals(taxPolicy: TaxPolicy(basisPoints: 1_900))([
+            line(cents: 999, basisPoints: 1_000, quantity: 2),  // gross 1 998, discount 200
+            line(cents: 1_999, basisPoints: 1_800, quantity: 1), // gross 1 999, discount 360
+        ])
+
+        #expect(totals.gross == Cents(1_998 + 1_999))
+        #expect(totals.discount == Cents(200 + 360))
+        #expect(totals.gross == totals.subtotal + totals.discount)
+        #expect(totals.total == totals.subtotal + totals.tax)
     }
 
     // MARK: - Tax
@@ -138,6 +156,7 @@ struct CalculateCartTotalsTests {
 
         // 98 901 gross · 10.48 % = 10 364.8 -> 10 365
         #expect(totals.discount == Cents(10_365))
+        #expect(totals.gross == Cents(98_901))
         #expect(totals.subtotal == Cents(98_901 - 10_365))
         #expect(totals.itemCount == 99)
     }
@@ -148,6 +167,7 @@ struct CalculateCartTotalsTests {
             [line(cents: 999, basisPoints: 10_000, quantity: 2)]
         )
 
+        #expect(totals.gross == Cents(1_998), "The list price is still what the discount came off")
         #expect(totals.subtotal == .zero)
         #expect(totals.tax == .zero, "Tax was charged on a subtotal of zero")
         #expect(totals.total == .zero)

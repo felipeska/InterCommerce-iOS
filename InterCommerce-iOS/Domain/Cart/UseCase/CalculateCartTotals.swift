@@ -10,6 +10,10 @@
 //  would make the sum of the visible line discounts disagree with the total by a cent or two, which
 //  is the exact failure this design exists to avoid.
 //
+//  Both sides of the discount are reported: `gross` (list prices) and `subtotal` (after discounts).
+//  The summary needs the gross figure to print a breakdown that adds up, and it is computed here
+//  rather than in the view, where no money arithmetic is allowed.
+//
 
 nonisolated struct CalculateCartTotals: Sendable {
     private let taxPolicy: TaxPolicy
@@ -21,11 +25,13 @@ nonisolated struct CalculateCartTotals: Sendable {
     func callAsFunction(_ lines: [CartLine]) -> CartTotals {
         guard !lines.isEmpty else { return .empty }
 
+        let gross = lines.reduce(Cents.zero) { $0 + $1.gross }
         let subtotal = lines.reduce(Cents.zero) { $0 + $1.net }
         let discount = lines.reduce(Cents.zero) { $0 + $1.discount }
         let tax = tax(on: subtotal)
 
         return CartTotals(
+            gross: gross,
             subtotal: subtotal,
             discount: discount,
             tax: tax,

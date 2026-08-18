@@ -14,7 +14,10 @@ struct CartSummary: View {
 
     var body: some View {
         VStack(spacing: Spacing.s) {
-            row("Subtotal", MoneyFormat.string(totals.subtotal))
+            // The gross sum, not the discounted one: the rows below read top to bottom as
+            // subtotal − discounts + tax = total, and a subtotal that already had the discount taken
+            // out would contradict the "Discounts" line right under it.
+            row("Subtotal", MoneyFormat.string(totals.gross))
 
             // Only when there is something to show: a "− $0,00" line is noise.
             if totals.discount != .zero {

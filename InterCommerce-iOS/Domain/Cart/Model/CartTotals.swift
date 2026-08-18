@@ -5,7 +5,10 @@
 
 /// What the cart costs, broken down the way the summary shows it.
 nonisolated struct CartTotals: Equatable, Sendable {
-    /// The sum of the lines after their discounts.
+    /// The sum of the lines at list price, before any discount — the figure the summary shows as
+    /// "Subtotal", so that the "Discounts" row below it reads as a real subtraction.
+    let gross: Cents
+    /// The sum of the lines after their discounts. Invariant: `gross == subtotal + discount`.
     let subtotal: Cents
     /// What the discounts saved, for the row that shows it.
     let discount: Cents
@@ -14,7 +17,9 @@ nonisolated struct CartTotals: Equatable, Sendable {
     /// Units, not lines: the badge counts things in the bag.
     let itemCount: Int
 
-    static let empty = CartTotals(subtotal: .zero, discount: .zero, tax: .zero, total: .zero, itemCount: 0)
+    static let empty = CartTotals(
+        gross: .zero, subtotal: .zero, discount: .zero, tax: .zero, total: .zero, itemCount: 0
+    )
 }
 
 /// How much tax to add, in hundredths of a percent.
