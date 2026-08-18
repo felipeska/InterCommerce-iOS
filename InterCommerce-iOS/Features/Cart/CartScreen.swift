@@ -9,17 +9,24 @@ struct CartScreen: View {
     @State private var viewModel: CartViewModel
     private let taxPercentage: Double
     let onBrowse: () -> Void
+    let onCheckout: () -> Void
 
-    init(dependencies: AppDependencies, onBrowse: @escaping () -> Void) {
+    init(
+        dependencies: AppDependencies,
+        onBrowse: @escaping () -> Void,
+        onCheckout: @escaping () -> Void
+    ) {
         _viewModel = State(initialValue: CartViewModel(
             observeCart: dependencies.observeCart,
             updateQuantity: dependencies.updateQuantity,
             removeFromCart: dependencies.removeFromCart,
             addToCart: dependencies.addToCart,
+            placeOrder: dependencies.placeOrder,
             calculateTotals: dependencies.calculateTotals
         ))
         self.taxPercentage = dependencies.taxPolicy.percentage
         self.onBrowse = onBrowse
+        self.onCheckout = onCheckout
     }
 
     var body: some View {
@@ -31,7 +38,13 @@ struct CartScreen: View {
                 Task { await viewModel.setQuantity(quantity, for: line) }
             },
             onRemove: { line in Task { await viewModel.remove(line) } },
-            onBrowse: onBrowse
+            onBrowse: onBrowse,
+            onCheckout: {
+                Task {
+                    // Only navigates when there was something to order.
+                    if await viewModel.checkout() { onCheckout() }
+                }
+            }
         )
         .task { await viewModel.start() }
         .toolbar {

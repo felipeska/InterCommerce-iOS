@@ -90,6 +90,14 @@ actor CartStore {
         broadcast()
     }
 
+    /// Empties the cart in one delete rather than a loop: the order is one event, and the observers
+    /// should see one emission, not a countdown.
+    func clear() throws {
+        try modelContext.delete(model: CartItemEntity.self)
+        try modelContext.save()
+        broadcast()
+    }
+
     func remove(productId: Int) throws {
         try modelContext.delete(
             model: CartItemEntity.self,

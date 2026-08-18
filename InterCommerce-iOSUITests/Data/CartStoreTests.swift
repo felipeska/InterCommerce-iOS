@@ -187,6 +187,30 @@ struct CartStoreTests {
         #expect(observed == [[1], [2], [9], []], "A write did not reach the observers")
     }
 
+    /// The confirmation screen depends on this: the badge is a live subscriber, and an order that
+    /// does not reach it leaves a count for a cart that no longer has anything in it.
+    @Test("Clearing the cart reaches the observers")
+    func clearReachesObservers() async throws {
+        let store = try makeStore()
+        try await store.add(product(id: 1), quantity: 2)
+        try await store.add(product(id: 2), quantity: 1)
+
+        var emissions: [[Int]] = []
+        let stream = await store.linesStream()
+        let collector = Task {
+            for await lines in stream {
+                emissions.append(lines.map(\.productId))
+                if emissions.count == 2 { break }
+            }
+            return emissions
+        }
+
+        try await store.clear()
+
+        #expect(await collector.value == [[1, 2], []], "The clear did not reach the observers")
+        #expect(await store.currentLines().isEmpty)
+    }
+
     @Test("A finished stream stops counting against the store")
     func terminatedStreamIsReleased() async throws {
         let store = try makeStore()

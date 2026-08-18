@@ -38,4 +38,8 @@ nonisolated struct CartRepositoryImpl: CartRepository {
     func remove(productId: Int) async {
         try? await store.remove(productId: productId)
     }
+
+    func clear() async {
+        try? await store.clear()
+    }
 }

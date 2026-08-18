@@ -11,4 +11,7 @@ nonisolated protocol CartRepository: Sendable {
     func add(_ product: Product, quantity: Int) async
     func setQuantity(_ quantity: Int, productId: Int) async
     func remove(productId: Int) async
+    /// Empties the cart. Separate from removing every line one by one, because the two mean
+    /// different things to the person: one is an edit that can be undone, this one is an order.
+    func clear() async
 }

@@ -21,6 +21,7 @@ struct AppDependencies: Sendable {
     let addToCart: AddToCart
     let updateQuantity: UpdateQuantity
     let removeFromCart: RemoveFromCart
+    let placeOrder: PlaceOrder
     let calculateTotals: CalculateCartTotals
     /// Exposed so the summary can label the row. The rate lives in exactly one place.
     let taxPolicy: TaxPolicy
@@ -54,6 +55,7 @@ struct AppDependencies: Sendable {
             addToCart: AddToCart(repository: cartRepository),
             updateQuantity: UpdateQuantity(repository: cartRepository),
             removeFromCart: RemoveFromCart(repository: cartRepository),
+            placeOrder: PlaceOrder(repository: cartRepository),
             calculateTotals: CalculateCartTotals(taxPolicy: configuration.taxPolicy),
             taxPolicy: configuration.taxPolicy,
             loadImage: { url in try await imageLoader.image(for: url) }
@@ -133,6 +135,7 @@ extension AppDependencies {
         addToCart: AddToCart(repository: PreviewCartRepository()),
         updateQuantity: UpdateQuantity(repository: PreviewCartRepository()),
         removeFromCart: RemoveFromCart(repository: PreviewCartRepository()),
+        placeOrder: PlaceOrder(repository: PreviewCartRepository()),
         calculateTotals: CalculateCartTotals(),
         taxPolicy: .none,
         loadImage: { _ in
@@ -157,6 +160,7 @@ private struct PreviewCartRepository: CartRepository {
     func add(_ product: Product, quantity: Int) async {}
     func setQuantity(_ quantity: Int, productId: Int) async {}
     func remove(productId: Int) async {}
+    func clear() async {}
 }
 
 private struct PreviewProductRepository: ProductRepository {

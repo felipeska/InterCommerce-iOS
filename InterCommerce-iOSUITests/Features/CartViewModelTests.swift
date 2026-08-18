@@ -20,6 +20,7 @@ struct CartViewModelTests {
             updateQuantity: UpdateQuantity(repository: repository),
             removeFromCart: RemoveFromCart(repository: repository),
             addToCart: AddToCart(repository: repository),
+            placeOrder: PlaceOrder(repository: repository),
             calculateTotals: CalculateCartTotals(taxPolicy: taxPolicy)
         )
     }
@@ -90,10 +91,80 @@ struct CartViewModelTests {
     }
 }
 
+@MainActor
+struct CartCheckoutTests {
+
+    private func makeViewModel(repository: FakeCartRepository) -> CartViewModel {
+        CartViewModel(
+            observeCart: ObserveCart(repository: repository),
+            updateQuantity: UpdateQuantity(repository: repository),
+            removeFromCart: RemoveFromCart(repository: repository),
+            addToCart: AddToCart(repository: repository),
+            placeOrder: PlaceOrder(repository: repository),
+            calculateTotals: CalculateCartTotals()
+        )
+    }
+
+    @Test("Checking out empties the cart and reports that an order was placed")
+    func checkoutClearsTheCart() async {
+        let repository = FakeCartRepository(lines: CartLine.previewList)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
+
+        let placed = await viewModel.checkout()
+
+        #expect(placed, "The screen would not have navigated to the confirmation")
+        #expect(await repository.clearCount == 1)
+    }
+
+    /// The confirmation screen is reached only through a real order. Without this the button would
+    /// happily confirm an order for nothing.
+    @Test("An empty cart cannot be checked out")
+    func emptyCartDoesNotCheckOut() async {
+        let repository = FakeCartRepository(lines: [])
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
+
+        let placed = await viewModel.checkout()
+
+        #expect(placed == false)
+        #expect(await repository.clearCount == 0, "An empty cart was cleared anyway")
+    }
+
+    /// Undo restores a line, and the cart it would restore into no longer exists. Offering it after
+    /// an order would put the item back with nothing to pay for it.
+    @Test("Placing the order drops the pending undo")
+    func checkoutDropsTheUndo() async {
+        let repository = FakeCartRepository(lines: CartLine.previewList)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
+        await viewModel.remove(CartLine.previewList[0])
+        #expect(viewModel.lastRemoved != nil)
+
+        _ = await viewModel.checkout()
+
+        #expect(viewModel.lastRemoved == nil, "The confirmation screen still offered an undo")
+    }
+
+    /// Clearing goes through `clear`, not a loop of removals: the order is one event, and the
+    /// removal path is the one that offers an undo.
+    @Test("Checkout does not remove the lines one by one")
+    func checkoutDoesNotLoopOverRemovals() async {
+        let repository = FakeCartRepository(lines: CartLine.previewList)
+        let viewModel = makeViewModel(repository: repository)
+        await viewModel.start()
+
+        _ = await viewModel.checkout()
+
+        #expect(await repository.removed.isEmpty)
+    }
+}
+
 private actor FakeCartRepository: CartRepository {
     private let lines: [CartLine]
     private(set) var removed: [Int] = []
     private(set) var added: [(Int, Int)] = []
+    private(set) var clearCount = 0
 
     init(lines: [CartLine]) {
         self.lines = lines
@@ -110,4 +181,5 @@ private actor FakeCartRepository: CartRepository {
     func add(_ product: Product, quantity: Int) async { added.append((product.id, quantity)) }
     func setQuantity(_ quantity: Int, productId: Int) async {}
     func remove(productId: Int) async { removed.append(productId) }
+    func clear() async { clearCount += 1 }
 }

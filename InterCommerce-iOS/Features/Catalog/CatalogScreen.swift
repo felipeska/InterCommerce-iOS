@@ -14,10 +14,19 @@ struct CatalogScreen: View {
 
     private let transitionNamespace: Namespace.ID
     private let dependencies: AppDependencies
+    private let cartCount: Int
+    private let onOpenCart: () -> Void
 
-    init(dependencies: AppDependencies, transitionNamespace: Namespace.ID) {
+    init(
+        dependencies: AppDependencies,
+        transitionNamespace: Namespace.ID,
+        cartCount: Int,
+        onOpenCart: @escaping () -> Void
+    ) {
         self.transitionNamespace = transitionNamespace
         self.dependencies = dependencies
+        self.cartCount = cartCount
+        self.onOpenCart = onOpenCart
         _viewModel = State(initialValue: CatalogViewModel(
             observeCatalog: dependencies.observeCatalog,
             refreshCatalog: dependencies.refreshCatalog,
@@ -43,8 +52,8 @@ struct CatalogScreen: View {
         .navigationTitle("InterCommerce")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: Destination.cart) {
-                    CartBadge(observeCart: dependencies.observeCart)
+                Button(action: onOpenCart) {
+                    CartBadge(count: cartCount)
                 }
             }
         }

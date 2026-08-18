@@ -88,6 +88,7 @@ private struct EmptyCartRepository: CartRepository {
     func add(_ product: Product, quantity: Int) async {}
     func setQuantity(_ quantity: Int, productId: Int) async {}
     func remove(productId: Int) async {}
+    func clear() async {}
 }
 
 // MARK: - Fake

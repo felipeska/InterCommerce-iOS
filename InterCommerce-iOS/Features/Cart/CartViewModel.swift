@@ -20,6 +20,7 @@ final class CartViewModel {
     private let updateQuantity: UpdateQuantity
     private let removeFromCart: RemoveFromCart
     private let addToCart: AddToCart
+    private let placeOrder: PlaceOrder
     private let calculateTotals: CalculateCartTotals
 
     init(
@@ -27,12 +28,14 @@ final class CartViewModel {
         updateQuantity: UpdateQuantity,
         removeFromCart: RemoveFromCart,
         addToCart: AddToCart,
+        placeOrder: PlaceOrder,
         calculateTotals: CalculateCartTotals
     ) {
         self.observeCart = observeCart
         self.updateQuantity = updateQuantity
         self.removeFromCart = removeFromCart
         self.addToCart = addToCart
+        self.placeOrder = placeOrder
         self.calculateTotals = calculateTotals
     }
 
@@ -72,6 +75,17 @@ final class CartViewModel {
             ),
             quantity: line.quantity
         )
+    }
+
+    /// - Returns: `true` when there was something to order. The screen only navigates to the
+    ///   confirmation on `true`, so it can never confirm an order for an empty cart.
+    func checkout() async -> Bool {
+        guard !lines.isEmpty else { return false }
+        // The pending undo goes with it: offering to restore a line into a cart that was just
+        // ordered would put the item back with nothing to pay for it.
+        lastRemoved = nil
+        await placeOrder()
+        return true
     }
 
     func dismissUndo() { lastRemoved = nil }

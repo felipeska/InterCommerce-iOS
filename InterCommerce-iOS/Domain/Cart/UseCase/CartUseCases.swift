@@ -63,3 +63,21 @@ nonisolated struct RemoveFromCart: Sendable {
         await repository.remove(productId: productId)
     }
 }
+
+/// Placing the order.
+///
+/// There is no payment and no order to look up afterwards — DummyJSON persists neither — so this
+/// does the one thing that is actually true: the cart is emptied because its contents were ordered.
+/// Deliberately **not** routed through `RemoveFromCart` line by line: that path offers an undo, and
+/// undoing a purchase is not something a confirmation screen can honour.
+nonisolated struct PlaceOrder: Sendable {
+    private let repository: any CartRepository
+
+    init(repository: any CartRepository) {
+        self.repository = repository
+    }
+
+    func callAsFunction() async {
+        await repository.clear()
+    }
+}

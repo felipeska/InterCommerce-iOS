@@ -8,4 +8,5 @@
 nonisolated enum Destination: Hashable {
     case productDetail(id: Int)
     case cart
+    case orderPlaced
 }
